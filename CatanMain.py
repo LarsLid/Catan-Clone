@@ -6,7 +6,7 @@ import random as rd
 
 pygame.init()
 
-WIDTH, HEIGHT = 1200, 700
+WIDTH, HEIGHT = 1200, 730
 cx, cy = WIDTH//2, HEIGHT//2
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Catan")
@@ -17,6 +17,13 @@ BTN_COLOR = (220, 180, 80)
 BTN_HOVER = (240, 200, 100)
 BTN_TEXT  = (30, 30, 30)
 BOARD = (255, 198, 41)
+
+#Team colors
+color_team_1 = (209, 45, 0) #Red
+color_team_2 = (255, 255, 255) #White
+color_team_3 = (19, 62, 207) #Blue
+color_team_4 = (43, 179, 20) #Green
+
 
 #Images
 ore_tile = pygame.image.load("ore_tile.png").convert_alpha()
@@ -79,6 +86,17 @@ startgame_rect = pygame.Rect(startgame_pos[0]-startgame_size[0]//2,
                        startgame_pos[1]-startgame_size[1]//2,
                         startgame_size[0], startgame_size[1])
 
+# Player selection state (when Start Game is pressed)
+show_player_selection = False
+# Precompute three player-choice rects (same size as startgame)
+pb_w, pb_h = startgame_size[0]//3.1, startgame_size[1]
+pb_spacing = 5
+pb_centers = [
+    (startgame_rect.centerx - (pb_w + pb_spacing), startgame_rect.centery),
+    (startgame_rect.centerx, startgame_rect.centery),
+    (startgame_rect.centerx + (pb_w + pb_spacing), startgame_rect.centery),
+]
+player_rects = [pygame.Rect(cx - pb_w//2, cy - pb_h//2, pb_w, pb_h) for cx,cy in pb_centers]
 
 r=65 #Hex radius
 bg_tile_pts = [(-math.sqrt(3)/2*r, -r/2), (0,-r), (math.sqrt(3)/2*r, -r/2),
@@ -89,31 +107,32 @@ def BoardSetup(pts, r=65):
     tile_centres = []
     s= math.sqrt(3)/2*r
     h= r/2
-    oy=200
+    board_height = 100
+    oy=board_height
     for i in range(3):
         ox=100+2*s+2*s*i
         bg_tiles_adjusted = [(x + ox, y + oy) for x,y in pts]
         pygame.draw.polygon(screen, BOARD, bg_tiles_adjusted, width=0)
         tile_centres.append((ox,oy))
-    oy=200+(r+h)
+    oy=board_height+(r+h)
     for i in range(4):
         ox=100+s+2*s*i
         bg_tiles_adjusted = [(x + ox, y + oy) for x,y in pts]
         pygame.draw.polygon(screen, BOARD, bg_tiles_adjusted, width=0)
         tile_centres.append((ox,oy))
-    oy=200+2*(r+h)
+    oy=board_height+2*(r+h)
     for i in range(5):
         ox=100+2*s*i
         bg_tiles_adjusted = [(x + ox, y + oy) for x,y in pts]
         pygame.draw.polygon(screen, BOARD, bg_tiles_adjusted, width=0)
         tile_centres.append((ox,oy))
-    oy=200+3*(r+h)
+    oy=board_height+3*(r+h)
     for i in range(4):
         ox=100+s+2*s*i
         bg_tiles_adjusted = [(x + ox, y + oy) for x,y in pts]
         pygame.draw.polygon(screen, BOARD, bg_tiles_adjusted, width=0)
         tile_centres.append((ox,oy))
-    oy=200+4*(r+h)
+    oy=board_height+4*(r+h)
     for i in range(3):
         ox=100+2*s+2*s*i
         bg_tiles_adjusted = [(x + ox, y + oy) for x,y in pts]
@@ -193,6 +212,8 @@ def placeTiles (tile_centres):
         number_pieces[number_piece] = NumberPiece(number_on_tile[i], (cx,cy))
         number_pieces[number_piece].draw()
 
+def firstRound(num_players):
+    print(f"firstRound called with {num_players} players")
 
 
 
@@ -216,8 +237,14 @@ while running:
             # toggle center-desert state
             CENTER_DESERT = not CENTER_DESERT
             print("CENTER_DESERT set to", CENTER_DESERT)
-        if event.type == pygame.MOUSEBUTTONDOWN and startgame_rect.collidepoint(mouse_pos):
-            print("Start game")
+        if event.type == pygame.MOUSEBUTTONDOWN and not show_player_selection and startgame_rect.collidepoint(mouse_pos):
+            show_player_selection = True
+        elif event.type == pygame.MOUSEBUTTONDOWN and show_player_selection:
+            for idx, prect in enumerate(player_rects):
+                if prect.collidepoint(mouse_pos):
+                    firstRound(idx + 2)
+                    show_player_selection = False
+                    break
 
     screen.fill(BG_COLOR)
 
@@ -226,11 +253,19 @@ while running:
     pygame.draw.rect(screen, color, endturn_rect, border_radius=8)
     label = font.render("END TURN", True, BTN_TEXT)
     screen.blit(label, label.get_rect(center=endturn_rect.center))
-    #Start Game Button
-    color = BTN_HOVER if startgame_rect.collidepoint(mouse_pos) else BTN_COLOR
-    pygame.draw.rect(screen, color, startgame_rect, border_radius=8)
-    label = font.render("START GAME", True, BTN_TEXT)
-    screen.blit(label, label.get_rect(center=startgame_rect.center))
+    #Start Game Button or Player-count choices
+    if show_player_selection:
+        labels = ["2P", "3P", "4P"]
+        for i, prect in enumerate(player_rects):
+            color = BTN_HOVER if prect.collidepoint(mouse_pos) else BTN_COLOR
+            pygame.draw.rect(screen, color, prect, border_radius=8)
+            lbl = font.render(labels[i], True, BTN_TEXT)
+            screen.blit(lbl, lbl.get_rect(center=prect.center))
+    else:
+        color = BTN_HOVER if startgame_rect.collidepoint(mouse_pos) else BTN_COLOR
+        pygame.draw.rect(screen, color, startgame_rect, border_radius=8)
+        label = font.render("START GAME", True, BTN_TEXT)
+        screen.blit(label, label.get_rect(center=startgame_rect.center))
 
     # Generate Map Button
     color = BTN_HOVER if gen_rect.collidepoint(mouse_pos) else BTN_COLOR
