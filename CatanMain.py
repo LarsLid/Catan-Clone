@@ -28,7 +28,30 @@ desert_tile = pygame.image.load("desert_tile.png").convert_alpha()
 
 tile_types = [ore_tile, sheep_tile, brick_tile, wheat_tile, timber_tile, desert_tile]
 
+#Numbers for resource yield
+#numbers = [2,3,3,4,4,5,5,6,6,7,8,8,9,9,10,10,11,11,12]
+class NumberPiece:
+    def __init__(self, number, pos):
+        self.number = number
+        RED=False
+        if self.number == 6 or self.number == 8:
+            RED = True
+        self.color = (247, 49, 42) if RED else (0,0,0)
+        self.bg_color = (252, 221, 119)
+        self.font = pygame.font.SysFont(None, 30)
+        self.pos = pos
+        self.text_top_corner_x = pos[0]-7
+        self.text_top_corner_y = pos[1]-7
+        self.r = 20
+    def draw(self):
+        self.border = pygame.draw.circle(screen, (0,0,0), self.pos, self.r+4)
+        self.circle = pygame.draw.circle(screen, self.bg_color, self.pos, self.r)
+        self.text = self.font.render(str(self.number), True, self.color)
+        screen.blit(self.text, (self.text_top_corner_x,self.text_top_corner_y))
 
+
+
+#UI
 font = pygame.font.SysFont(None, 36)
 toggle_font = pygame.font.SysFont(None, 20)
 clock = pygame.time.Clock()
@@ -49,9 +72,7 @@ gen_rect = pygame.Rect(gen_pos[0]-gen_size[0]//2,
 toggle_size = (140, 40)
 toggle_rect = pygame.Rect(gen_rect.right + 12, gen_rect.top, toggle_size[0], toggle_size[1])
 
-# Center-desert flag (controlled by the toggle)
-CENTER_DESERT = True
-
+# Startm game button
 startgame_pos = (WIDTH // 1.3, HEIGHT// 1.3 )
 startgame_size = (180,50)
 startgame_rect = pygame.Rect(startgame_pos[0]-startgame_size[0]//2,
@@ -102,9 +123,11 @@ def BoardSetup(pts, r=65):
     return tile_centres
 
 mapseed = [rd.randint(0,4) for i in range(19)] #Not MapGen, just placeholder list
-
-def mapGen(mapseed):
+number_on_tile = [1 for i in range(19)] # Placeholder number placement
+CENTER_DESERT = True
+def mapGen(mapseed, number_on_tile):
     allowed_tiles = [0,0,0, 1,1,1,1, 2,2,2, 3,3,3,3, 4,4,4,4, 5] #weighted odds
+    numbers = [2,3,3,4,4,5,5,6,6,7,8,8,9,9,10,10,11,11,12] #Resource numbers
     if CENTER_DESERT:
         allowed_tiles.pop(-1)
         j=0
@@ -123,6 +146,21 @@ def mapGen(mapseed):
             allowed_tile_index =rd.randint(0,18-i)
             mapseed[i]=allowed_tiles[allowed_tile_index]
             allowed_tiles.pop(allowed_tile_index)
+
+    #Placing numbers
+    desertIndex = mapseed.index(5)
+    number_on_tile[desertIndex]=7
+    numbers.pop(9) #number 7 has index 9
+    j=0
+    for i in range(19):
+        if i ==desertIndex:
+            continue #skip desert (always 7)
+        else:
+            j+=1
+            number_index =rd.randint(0,18-j)
+            number_on_tile[i]=numbers[number_index]
+            numbers.pop(number_index)
+
 print(mapseed)
 
 def placeTiles (tile_centres):
@@ -133,6 +171,9 @@ def placeTiles (tile_centres):
     max_w = int(math.sqrt(3) * r*0.98)
     max_h = int(2 * r*0.98)
     scaled_tiles = [None] * len(tile_types)
+    #Numbers
+    number_pieces = {} #dict for objects
+
     for i in range(len(tile_types)):
         iw, ih = tile_types[i].get_size()
         scale = min(max_w / iw, max_h / ih, 1)
@@ -142,18 +183,22 @@ def placeTiles (tile_centres):
         scaled_tiles[i] = pygame.transform.smoothscale(tile_types[i], (new_w, new_h))
 
 
-
     for i in range(len(tile_centres)):
         cx, cy = tile_centres[i]
         blit_pos = (int(cx - new_w // 2), int(cy - new_h // 2))
         screen.blit(scaled_tiles[mapseed[i]], blit_pos)
+        
+        #Place numbers
+        number_piece = f"Number on tile {i}" #Name for objects in dict
+        number_pieces[number_piece] = NumberPiece(number_on_tile[i], (cx,cy))
+        number_pieces[number_piece].draw()
 
-    
-tile_centres = BoardSetup(bg_tile_pts)
 
+
+
+mapGen(mapseed, number_on_tile)
 
 running = True
-
 while running:
     mouse_pos = pygame.mouse.get_pos()
 
@@ -166,7 +211,7 @@ while running:
             print("End turn!")
         if event.type == pygame.MOUSEBUTTONDOWN and gen_rect.collidepoint(mouse_pos):
             print("Generate map")
-            mapGen(mapseed)
+            mapGen(mapseed, number_on_tile)
         if event.type == pygame.MOUSEBUTTONDOWN and toggle_rect.collidepoint(mouse_pos):
             # toggle center-desert state
             CENTER_DESERT = not CENTER_DESERT
