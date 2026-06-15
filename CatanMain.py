@@ -3,20 +3,14 @@ import sys
 import math
 import numpy as np
 import random as rd
-
 pygame.init()
+from UI import *
+from GameSetup import *
+from GameStates import *
 
-WIDTH, HEIGHT = 1200, 730
 cx, cy = WIDTH//2, HEIGHT//2
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Catan")
 
-#Colors
-BG_COLOR  = (30, 80, 160)
-BTN_COLOR = (220, 180, 80)
-BTN_HOVER = (240, 200, 100)
-BTN_TEXT  = (30, 30, 30)
-BOARD = (255, 198, 41)
 
 #Team colors
 color_team_1 = (209, 45, 0) #Red
@@ -26,12 +20,12 @@ color_team_4 = (43, 179, 20) #Green
 
 
 #Images
-ore_tile = pygame.image.load("ore_tile.png").convert_alpha()
-sheep_tile = pygame.image.load("sheep_tile.png").convert_alpha()
-brick_tile = pygame.image.load("brick_tile.png").convert_alpha()
-wheat_tile = pygame.image.load("wheat_tile.png").convert_alpha()
-timber_tile = pygame.image.load("timber_tile.png").convert_alpha()
-desert_tile = pygame.image.load("desert_tile.png").convert_alpha()
+ore_tile = pygame.image.load("images/ore_tile.png").convert_alpha()
+sheep_tile = pygame.image.load("images/sheep_tile.png").convert_alpha()
+brick_tile = pygame.image.load("images/brick_tile.png").convert_alpha()
+wheat_tile = pygame.image.load("images/wheat_tile.png").convert_alpha()
+timber_tile = pygame.image.load("images/timber_tile.png").convert_alpha()
+desert_tile = pygame.image.load("images/desert_tile.png").convert_alpha()
 
 tile_types = [ore_tile, sheep_tile, brick_tile, wheat_tile, timber_tile, desert_tile]
 
@@ -57,131 +51,6 @@ class NumberPiece:
         screen.blit(self.text, (self.text_top_corner_x,self.text_top_corner_y))
 
 
-
-#UI
-font = pygame.font.SysFont(None, 36)
-toggle_font = pygame.font.SysFont(None, 20)
-clock = pygame.time.Clock()
-endturn_pos = (WIDTH // 1.3, HEIGHT// 1.1 )
-endturn_size = (180,50)
-endturn_rect = pygame.Rect(endturn_pos[0]-endturn_size[0]//2,
-                       endturn_pos[1]-endturn_size[1]//2,
-                        endturn_size[0], endturn_size[1])
-
-# Generate map button (same size/structure as other buttons, placed above end turn)
-gen_pos = (WIDTH//1.3, HEIGHT // 1.5)
-gen_size = endturn_size
-gen_rect = pygame.Rect(gen_pos[0]-gen_size[0]//2,
-                       gen_pos[1]-gen_size[1]//2,
-                        gen_size[0], gen_size[1])
-
-# Small toggle button to the right of Generate map
-toggle_size = (140, 40)
-toggle_rect = pygame.Rect(gen_rect.right + 12, gen_rect.top, toggle_size[0], toggle_size[1])
-
-# Startm game button
-startgame_pos = (WIDTH // 1.3, HEIGHT// 1.3 )
-startgame_size = (180,50)
-startgame_rect = pygame.Rect(startgame_pos[0]-startgame_size[0]//2,
-                       startgame_pos[1]-startgame_size[1]//2,
-                        startgame_size[0], startgame_size[1])
-
-# Player selection state (when Start Game is pressed)
-show_player_selection = False
-# Precompute three player-choice rects (same size as startgame)
-pb_w, pb_h = startgame_size[0]//3.1, startgame_size[1]
-pb_spacing = 5
-pb_centers = [
-    (startgame_rect.centerx - (pb_w + pb_spacing), startgame_rect.centery),
-    (startgame_rect.centerx, startgame_rect.centery),
-    (startgame_rect.centerx + (pb_w + pb_spacing), startgame_rect.centery),
-]
-player_rects = [pygame.Rect(cx - pb_w//2, cy - pb_h//2, pb_w, pb_h) for cx,cy in pb_centers]
-
-r=65 #Hex radius
-bg_tile_pts = [(-math.sqrt(3)/2*r, -r/2), (0,-r), (math.sqrt(3)/2*r, -r/2),
-               (math.sqrt(3)/2*r, r/2), (0,r), (-math.sqrt(3)/2*r, r/2)]
-
-#BoardSetup
-def BoardSetup(pts, r=65):
-    tile_centres = []
-    s= math.sqrt(3)/2*r
-    h= r/2
-    board_height = 100
-    oy=board_height
-    for i in range(3):
-        ox=100+2*s+2*s*i
-        bg_tiles_adjusted = [(x + ox, y + oy) for x,y in pts]
-        pygame.draw.polygon(screen, BOARD, bg_tiles_adjusted, width=0)
-        tile_centres.append((ox,oy))
-    oy=board_height+(r+h)
-    for i in range(4):
-        ox=100+s+2*s*i
-        bg_tiles_adjusted = [(x + ox, y + oy) for x,y in pts]
-        pygame.draw.polygon(screen, BOARD, bg_tiles_adjusted, width=0)
-        tile_centres.append((ox,oy))
-    oy=board_height+2*(r+h)
-    for i in range(5):
-        ox=100+2*s*i
-        bg_tiles_adjusted = [(x + ox, y + oy) for x,y in pts]
-        pygame.draw.polygon(screen, BOARD, bg_tiles_adjusted, width=0)
-        tile_centres.append((ox,oy))
-    oy=board_height+3*(r+h)
-    for i in range(4):
-        ox=100+s+2*s*i
-        bg_tiles_adjusted = [(x + ox, y + oy) for x,y in pts]
-        pygame.draw.polygon(screen, BOARD, bg_tiles_adjusted, width=0)
-        tile_centres.append((ox,oy))
-    oy=board_height+4*(r+h)
-    for i in range(3):
-        ox=100+2*s+2*s*i
-        bg_tiles_adjusted = [(x + ox, y + oy) for x,y in pts]
-        pygame.draw.polygon(screen, BOARD, bg_tiles_adjusted, width=0)
-        tile_centres.append((ox,oy))
-    
-    return tile_centres
-
-mapseed = [rd.randint(0,4) for i in range(19)] #Not MapGen, just placeholder list
-number_on_tile = [1 for i in range(19)] # Placeholder number placement
-CENTER_DESERT = True
-def mapGen(mapseed, number_on_tile):
-    allowed_tiles = [0,0,0, 1,1,1,1, 2,2,2, 3,3,3,3, 4,4,4,4, 5] #weighted odds
-    numbers = [2,3,3,4,4,5,5,6,6,7,8,8,9,9,10,10,11,11,12] #Resource numbers
-    if CENTER_DESERT:
-        allowed_tiles.pop(-1)
-        j=0
-        for i in range(19):
-            if i == 9:
-                continue
-  
-            else:
-                j+=1
-                allowed_tile_index =rd.randint(0,18-j)
-                mapseed[i]=allowed_tiles[allowed_tile_index]
-                allowed_tiles.pop(allowed_tile_index)
-        mapseed[9]=5
-    else:
-        for i in range(19):
-            allowed_tile_index =rd.randint(0,18-i)
-            mapseed[i]=allowed_tiles[allowed_tile_index]
-            allowed_tiles.pop(allowed_tile_index)
-
-    #Placing numbers
-    desertIndex = mapseed.index(5)
-    number_on_tile[desertIndex]=7
-    numbers.pop(9) #number 7 has index 9
-    j=0
-    for i in range(19):
-        if i ==desertIndex:
-            continue #skip desert (always 7)
-        else:
-            j+=1
-            number_index =rd.randint(0,18-j)
-            number_on_tile[i]=numbers[number_index]
-            numbers.pop(number_index)
-
-print(mapseed)
-
 def placeTiles (tile_centres):
     if not tile_centres:
         return
@@ -204,6 +73,8 @@ def placeTiles (tile_centres):
 
     for i in range(len(tile_centres)):
         cx, cy = tile_centres[i]
+        bg_tiles_adjusted = [(x + cx, y + cy) for x, y in bg_tile_pts]
+        pygame.draw.polygon(screen, BOARD, bg_tiles_adjusted, width=0)
         blit_pos = (int(cx - new_w // 2), int(cy - new_h // 2))
         screen.blit(scaled_tiles[mapseed[i]], blit_pos)
         
@@ -217,70 +88,55 @@ def firstRound(num_players):
 
 
 
-mapGen(mapseed, number_on_tile)
+mapGen(mapseed, number_on_tile, CENTER_DESERT)
 
 running = True
 while running:
     mouse_pos = pygame.mouse.get_pos()
+
+    for stateName, state in GameStates.items():
+        if state:
+            cur_game_state = stateName
+
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             running = False
-        if event.type == pygame.MOUSEBUTTONDOWN and endturn_rect.collidepoint(mouse_pos):
-            print("End turn!")
-        if event.type == pygame.MOUSEBUTTONDOWN and gen_rect.collidepoint(mouse_pos):
-            print("Generate map")
-            mapGen(mapseed, number_on_tile)
-        if event.type == pygame.MOUSEBUTTONDOWN and toggle_rect.collidepoint(mouse_pos):
-            # toggle center-desert state
-            CENTER_DESERT = not CENTER_DESERT
-            print("CENTER_DESERT set to", CENTER_DESERT)
-        if event.type == pygame.MOUSEBUTTONDOWN and not show_player_selection and startgame_rect.collidepoint(mouse_pos):
-            show_player_selection = True
-        elif event.type == pygame.MOUSEBUTTONDOWN and show_player_selection:
-            for idx, prect in enumerate(player_rects):
-                if prect.collidepoint(mouse_pos):
-                    firstRound(idx + 2)
-                    show_player_selection = False
-                    break
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if endturn_btn.is_clicked(mouse_pos):
+                print("End turn!")
+            elif gen_btn.is_clicked(mouse_pos):
+                mapGen(mapseed, number_on_tile, CENTER_DESERT)
+            elif toggle_btn.is_clicked(mouse_pos):
+                CENTER_DESERT = not CENTER_DESERT
+            elif not show_player_selection and startgame_btn.is_clicked(mouse_pos):
+                show_player_selection = True
+            elif show_player_selection:
+                for idx, btn in enumerate(player_btns):
+                    if btn.is_clicked(mouse_pos):
+                        firstRound(idx + 2)
+                        show_player_selection = False
+                        break
 
     screen.fill(BG_COLOR)
 
-    #End Turn Button
-    color = BTN_HOVER if endturn_rect.collidepoint(mouse_pos) else BTN_COLOR
-    pygame.draw.rect(screen, color, endturn_rect, border_radius=8)
-    label = font.render("END TURN", True, BTN_TEXT)
-    screen.blit(label, label.get_rect(center=endturn_rect.center))
-    #Start Game Button or Player-count choices
-    if show_player_selection:
-        labels = ["2P", "3P", "4P"]
-        for i, prect in enumerate(player_rects):
-            color = BTN_HOVER if prect.collidepoint(mouse_pos) else BTN_COLOR
-            pygame.draw.rect(screen, color, prect, border_radius=8)
-            lbl = font.render(labels[i], True, BTN_TEXT)
-            screen.blit(lbl, lbl.get_rect(center=prect.center))
-    else:
-        color = BTN_HOVER if startgame_rect.collidepoint(mouse_pos) else BTN_COLOR
-        pygame.draw.rect(screen, color, startgame_rect, border_radius=8)
-        label = font.render("START GAME", True, BTN_TEXT)
-        screen.blit(label, label.get_rect(center=startgame_rect.center))
+    endturn_btn.draw(mouse_pos, cur_game_state)
+    gen_btn.draw(mouse_pos, cur_game_state)
+    toggle_btn.label = f"CENTER DESERT: {'ON' if CENTER_DESERT else 'OFF'}"
+    toggle_btn.color = (120, 220, 120) if CENTER_DESERT else BTN_COLOR
+    toggle_btn.draw(mouse_pos, cur_game_state)
 
-    # Generate Map Button
-    color = BTN_HOVER if gen_rect.collidepoint(mouse_pos) else BTN_COLOR
-    pygame.draw.rect(screen, color, gen_rect, border_radius=8)
-    label = font.render("REGENERATE", True, BTN_TEXT)
-    screen.blit(label, label.get_rect(center=gen_rect.center))
-    # Center Desert Toggle
-    t_color = (120,220,120) if CENTER_DESERT else BTN_COLOR
-    t_color = BTN_HOVER if toggle_rect.collidepoint(mouse_pos) else t_color
-    pygame.draw.rect(screen, t_color, toggle_rect, border_radius=8)
-    state = "ON" if CENTER_DESERT else "OFF"
-    label = toggle_font.render(f"CENTER DESERT: {state}", True, BTN_TEXT)
-    screen.blit(label, label.get_rect(center=toggle_rect.center))
-    
-    tile_centres = BoardSetup(bg_tile_pts)
+    if show_player_selection:
+        for btn in player_btns:
+            btn.draw(mouse_pos, cur_game_state)
+    else:
+        startgame_btn.draw(mouse_pos, cur_game_state)
+
+    BS_return = BoardSetup()
+    tile_centres = BS_return
+
     placeTiles(tile_centres)
 
 
