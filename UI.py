@@ -5,6 +5,7 @@ import numpy as np
 import random as rd
 
 WIDTH, HEIGHT = 1200, 730
+cx, cy = WIDTH//2, HEIGHT//2
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
 BG_COLOR  = (30, 80, 160)
@@ -13,7 +14,16 @@ BTN_HOVER = (240, 200, 100)
 BTN_TEXT  = (30, 30, 30)
 BOARD = (255, 198, 41)
 
+#Images
+ore_tile = pygame.image.load("images/ore_tile.png").convert_alpha()
+sheep_tile = pygame.image.load("images/sheep_tile.png").convert_alpha()
+brick_tile = pygame.image.load("images/brick_tile.png").convert_alpha()
+wheat_tile = pygame.image.load("images/wheat_tile.png").convert_alpha()
+timber_tile = pygame.image.load("images/timber_tile.png").convert_alpha()
+desert_tile = pygame.image.load("images/desert_tile.png").convert_alpha()
+
 font        = pygame.font.SysFont(None, 36)
+hover_font  = pygame.font.SysFont(None, 38)
 toggle_font = pygame.font.SysFont(None, 20)
 clock       = pygame.time.Clock()
 
@@ -26,16 +36,22 @@ class Button:
         self.color       = color
         self.hover_color = hover_color
         self.visible_in_game_state = visible_in_game_state
+        self.clickable = False
 
     def draw(self, mouse_pos, gamestate):
         if str(gamestate) in self.visible_in_game_state:
+            self.clickable = True
             c = self.hover_color if self.rect.collidepoint(mouse_pos) else self.color
             pygame.draw.rect(screen, c, self.rect, border_radius=8)
             lbl = self.font.render(self.label, True, BTN_TEXT)
             screen.blit(lbl, lbl.get_rect(center=self.rect.center))
+        else:
+            self.clickable = False
 
     def is_clicked(self, mouse_pos):
-        return self.rect.collidepoint(mouse_pos)
+        if self.clickable:
+            return self.rect.collidepoint(mouse_pos)
+        
 
 
 endturn_btn   = Button("END TURN",   WIDTH // 1.3, HEIGHT // 1.1, 180, 50, ["FirstRound", "PlayerTurn"])
@@ -56,3 +72,27 @@ player_btns = [
 ]
 
 show_player_selection = False
+
+#Team colors
+color_team_1 = (209, 45, 0) #Red
+color_team_2 = (255, 255, 255) #White
+color_team_3 = (19, 62, 207) #Blue
+color_team_4 = (43, 179, 20) #Green
+
+class InfoText:
+    def __init__(self, label, cx, cy, w, h, player, visible_in_game_state=list, btn_font=None, color="white"):
+        self.label       = label
+        self.rect        = pygame.Rect(int(cx - w // 2), int(cy - h // 2), int(w), int(h))
+        self.font        = btn_font if btn_font is not None else font
+        self.color       = color
+        self.visible_in_game_state = visible_in_game_state
+        self.player = player
+ 
+    def draw(self, mouse_pos, gamestate):
+        if str(gamestate) in self.visible_in_game_state:
+            #c = self.hover_color if self.rect.collidepoint(mouse_pos) else self.color
+            self.font = hover_font if self.rect.collidepoint(mouse_pos) else font
+            #pygame.draw.rect(screen, c, self.rect, border_radius=8)
+            lbl = self.font.render(self.label, True, BTN_TEXT)
+            screen.blit(lbl, lbl.get_rect(center=self.rect.center))
+

@@ -7,26 +7,12 @@ pygame.init()
 from UI import *
 from GameSetup import *
 from GameStates import *
+from PiecePlacement import *
 
-cx, cy = WIDTH//2, HEIGHT//2
+
 pygame.display.set_caption("Catan")
 
-
-#Team colors
-color_team_1 = (209, 45, 0) #Red
-color_team_2 = (255, 255, 255) #White
-color_team_3 = (19, 62, 207) #Blue
-color_team_4 = (43, 179, 20) #Green
-
-
-#Images
-ore_tile = pygame.image.load("images/ore_tile.png").convert_alpha()
-sheep_tile = pygame.image.load("images/sheep_tile.png").convert_alpha()
-brick_tile = pygame.image.load("images/brick_tile.png").convert_alpha()
-wheat_tile = pygame.image.load("images/wheat_tile.png").convert_alpha()
-timber_tile = pygame.image.load("images/timber_tile.png").convert_alpha()
-desert_tile = pygame.image.load("images/desert_tile.png").convert_alpha()
-
+player = 0
 tile_types = [ore_tile, sheep_tile, brick_tile, wheat_tile, timber_tile, desert_tile]
 
 #Numbers for resource yield
@@ -83,8 +69,6 @@ def placeTiles (tile_centres):
         number_pieces[number_piece] = NumberPiece(number_on_tile[i], (cx,cy))
         number_pieces[number_piece].draw()
 
-def firstRound(num_players):
-    print(f"firstRound called with {num_players} players")
 
 
 
@@ -94,10 +78,6 @@ running = True
 while running:
     mouse_pos = pygame.mouse.get_pos()
 
-    for stateName, state in GameStates.items():
-        if state:
-            cur_game_state = stateName
-
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -106,7 +86,9 @@ while running:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             if endturn_btn.is_clicked(mouse_pos):
-                print("End turn!")
+                if playerCount != None:
+                    player = whosTurn(player, playerCount)
+                    print(f"PLAYER {player}'S TURN")
             elif gen_btn.is_clicked(mouse_pos):
                 mapGen(mapseed, number_on_tile, CENTER_DESERT)
             elif toggle_btn.is_clicked(mouse_pos):
@@ -116,7 +98,12 @@ while running:
             elif show_player_selection:
                 for idx, btn in enumerate(player_btns):
                     if btn.is_clicked(mouse_pos):
-                        firstRound(idx + 2)
+                        playerCount = idx+2
+                        firstRound(playerCount)
+                        player = whosTurn(player, playerCount)
+                        print(f"PLAYER {player}'S TURN")
+                        cur_game_state = "FirstRound"
+                        
                         show_player_selection = False
                         break
 
@@ -134,11 +121,15 @@ while running:
     else:
         startgame_btn.draw(mouse_pos, cur_game_state)
 
+    #Draw Text
+    placeTownInfo = InfoText(None,cx//0.7, cy//3.5, 580, 40, player, ["FirstRound"])
+    placeTownInfo.label = f"PLAYER {placeTownInfo.player}'s TURN: PLACE 1 TOWN AND 1 ROAD"
+    placeTownInfo.draw(mouse_pos, cur_game_state)
+
     BS_return = BoardSetup()
     tile_centres = BS_return
 
     placeTiles(tile_centres)
-
 
     pygame.display.flip()
     clock.tick(60)
