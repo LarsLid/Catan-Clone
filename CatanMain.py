@@ -8,6 +8,7 @@ from UI import *
 from GameSetup import *
 from GameStates import *
 from PiecePlacement import *
+from DiceRoll import *
 
 
 pygame.display.set_caption("Catan")
@@ -106,6 +107,10 @@ while running:
                         
                         show_player_selection = False
                         break
+            elif throw_dice_btn.is_clicked(mouse_pos):
+                current_frame = 0
+                cur_dice_state = "Animating"
+                last_frame_time = pygame.time.get_ticks()
 
     screen.fill(BG_COLOR)
 
@@ -126,10 +131,28 @@ while running:
     placeTownInfo.label = f"PLAYER {placeTownInfo.player}'s TURN: PLACE 1 TOWN AND 1 ROAD"
     placeTownInfo.draw(mouse_pos, cur_game_state)
 
+    #Dice
+    throw_dice_btn.draw(mouse_pos, cur_game_state)
+    if cur_dice_state=="Animating":
+        print("animating")
+        now = pygame.time.get_ticks()
+        if now - last_frame_time > FRAME_DURATION:
+            current_frame += 1
+            last_frame_time = now
+            if current_frame >= NUM_FRAMES:
+                current_frame = NUM_FRAMES - 1
+                cur_dice_state = "Done"
+    frame_rect = pygame.Rect(current_frame * FRAME_W, 0, FRAME_W, FRAME_H)
+    frame_surf = roll_spritesheet.subsurface(frame_rect)
+
+    
+
     BS_return = BoardSetup()
     tile_centres = BS_return
 
     placeTiles(tile_centres)
+    if cur_game_state in ["FirstRound","ReadyToRoll", "PlayerTurn"]:
+        screen.blit(frame_surf, (WIDTH//1.6, HEIGHT//1.2)) #Dice
 
     pygame.display.flip()
     clock.tick(60)

@@ -24,15 +24,18 @@ desert_tile = pygame.image.load("images/desert_tile.png").convert_alpha()
 
 font        = pygame.font.SysFont(None, 36)
 hover_font  = pygame.font.SysFont(None, 38)
-toggle_font = pygame.font.SysFont(None, 20)
+toggle_font = pygame.font.SysFont(None, 18)
+toggle_hover_font = pygame.font.SysFont(None, 21)
 clock       = pygame.time.Clock()
 
 
 class Button:
-    def __init__(self, label, cx, cy, w, h, visible_in_game_state=list, btn_font=None, color=BTN_COLOR, hover_color=BTN_HOVER):
+    def __init__(self, label, cx, cy, w, h, visible_in_game_state=list, btn_font=None, color=BTN_COLOR, hover_color=BTN_HOVER, hover_font=hover_font):
         self.label       = label
         self.rect        = pygame.Rect(int(cx - w // 2), int(cy - h // 2), int(w), int(h))
+        self.hover_rect  = self.rect.inflate(7,7)
         self.font        = btn_font if btn_font is not None else font
+        self.hover_font = hover_font
         self.color       = color
         self.hover_color = hover_color
         self.visible_in_game_state = visible_in_game_state
@@ -41,9 +44,17 @@ class Button:
     def draw(self, mouse_pos, gamestate):
         if str(gamestate) in self.visible_in_game_state:
             self.clickable = True
-            c = self.hover_color if self.rect.collidepoint(mouse_pos) else self.color
-            pygame.draw.rect(screen, c, self.rect, border_radius=8)
-            lbl = self.font.render(self.label, True, BTN_TEXT)
+            if self.rect.collidepoint(mouse_pos):
+                rect = self.hover_rect
+                c = self.hover_color
+                btn_font_final = self.hover_font 
+            else:
+                c = self.color
+                rect = self.rect
+                btn_font_final = self.font
+
+            pygame.draw.rect(screen, c, rect, border_radius=8)
+            lbl = btn_font_final.render(self.label, True, BTN_TEXT)
             screen.blit(lbl, lbl.get_rect(center=self.rect.center))
         else:
             self.clickable = False
@@ -54,12 +65,12 @@ class Button:
         
 
 
-endturn_btn   = Button("END TURN",   WIDTH // 1.3, HEIGHT // 1.1, 180, 50, ["FirstRound", "PlayerTurn"])
+endturn_btn   = Button("END TURN",   WIDTH // 1.1, HEIGHT // 1.1, 180, 50, ["FirstRound", "PlayerTurn"])
 startgame_btn = Button("START GAME", WIDTH // 1.3, HEIGHT // 1.3, 180, 50, ["Menu"])
 gen_btn       = Button("REGENERATE", WIDTH // 1.3, HEIGHT // 1.5, 180, 50, ["Menu"])
 toggle_btn    = Button("CENTER DESERT: ON",
                        gen_btn.rect.right + 12 + 70, gen_btn.rect.top + 20,
-                       140, 40,["Menu"], btn_font=toggle_font)
+                       140, 40,["Menu"], btn_font=toggle_font, hover_font=toggle_hover_font)
 
 pb_w      = int(startgame_btn.rect.width / 3.1)
 pb_h      = startgame_btn.rect.height
@@ -70,6 +81,8 @@ player_btns = [
     Button("3P", scx,                    scy, pb_w, pb_h, ["Menu"]),
     Button("4P", scx + (pb_w + pb_gap),  scy, pb_w, pb_h, ["Menu"]),
 ]
+
+throw_dice_btn = Button("", WIDTH // 1.4, HEIGHT // 1.1, 240, 100, ["FirstRound","ReadyToRoll", "PlayerTurn"])
 
 show_player_selection = False
 
