@@ -36,9 +36,3 @@ def calculateRoll():
     print(die1_value, die2_value)
 
     return roll_value, combined_result_surf
-
-
-
-# Inne i loopen:
-
-

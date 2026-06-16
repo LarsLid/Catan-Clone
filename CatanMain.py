@@ -38,7 +38,7 @@ class NumberPiece:
         screen.blit(self.text, (self.text_top_corner_x,self.text_top_corner_y))
 
 
-def placeTiles (tile_centres):
+def placeTiles (tile_centres, town_spaces):
     if not tile_centres:
         return
 
@@ -70,10 +70,19 @@ def placeTiles (tile_centres):
         number_pieces[number_piece] = NumberPiece(number_on_tile[i], (cx,cy))
         number_pieces[number_piece].draw()
 
+    for i in range(len(town_spaces)):
+        pygame.draw.circle(screen, (255,0,0), town_spaces[i], 10)
 
+#BOOTUP CODE
 
+tile_centres = BoardSetup(r)
 
+town_spaces_main = generateTownSpaces(tile_centres, r)
 mapGen(mapseed, number_on_tile, CENTER_DESERT)
+
+    #First dice image
+frame_rect = pygame.Rect(current_frame * FRAME_W, 0, FRAME_W, FRAME_H)
+frame_surf = roll_spritesheet.subsurface(frame_rect)
 
 running = True
 while running:
@@ -90,6 +99,7 @@ while running:
                 if playerCount != None:
                     player = whosTurn(player, playerCount)
                     print(f"PLAYER {player}'S TURN")
+                    cur_dice_state="Ready"
             elif gen_btn.is_clicked(mouse_pos):
                 mapGen(mapseed, number_on_tile, CENTER_DESERT)
             elif toggle_btn.is_clicked(mouse_pos):
@@ -107,7 +117,7 @@ while running:
                         
                         show_player_selection = False
                         break
-            elif throw_dice_btn.is_clicked(mouse_pos):
+            elif throw_dice_btn.is_clicked(mouse_pos) and cur_dice_state=="Ready":
                 current_frame = 0
                 cur_dice_state = "Animating"
                 last_frame_time = pygame.time.get_ticks()
@@ -142,16 +152,16 @@ while running:
                 current_frame = NUM_FRAMES - 1
                 cur_dice_state = "Done"
                 roll_value, frame_surf = calculateRoll()
-    if cur_dice_state in ["Ready", "Animating"]:
+
         frame_rect = pygame.Rect(current_frame * FRAME_W, 0, FRAME_W, FRAME_H)
         frame_surf = roll_spritesheet.subsurface(frame_rect)
 
     
 
-    BS_return = BoardSetup()
-    tile_centres = BS_return
 
-    placeTiles(tile_centres)
+
+
+    placeTiles(tile_centres, town_spaces_main)
     if cur_game_state in ["FirstRound","ReadyToRoll", "PlayerTurn"]:
         screen.blit(frame_surf, (WIDTH//1.6, HEIGHT//1.2)) #Dice
 

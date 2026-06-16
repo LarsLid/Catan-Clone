@@ -9,7 +9,7 @@ bg_tile_pts = [(-math.sqrt(3)/2*r, -r/2), (0,-r), (math.sqrt(3)/2*r, -r/2),
                (math.sqrt(3)/2*r, r/2), (0,r), (-math.sqrt(3)/2*r, r/2)]
 
 #BoardSetup
-def BoardSetup(r=65):
+def BoardSetup(r):
     tile_centres = []
     s= math.sqrt(3)/2*r
     h= r/2
@@ -35,7 +35,46 @@ def BoardSetup(r=65):
         ox=100+2*s+2*s*i
         tile_centres.append((ox,oy))
     
+
     return tile_centres
+
+def generateTownSpaces(tile_centres, r):
+    cx, cy = tile_centres[0]
+    cx -= math.sqrt(3)/2*r
+    cy -= r/2-5
+    ox, oy = cx, cy - r/4
+    ox_adj, oy_adj = ox, oy
+    counter_sign = -3
+    hexes_in_row = 3
+    flipper = 1
+    town_spaces =[]
+    for i in range(6):
+        for j in range(hexes_in_row*2+1):
+            
+            ox_adj = ox+j*math.sqrt(3)/2*r
+            oy_adj = oy+flipper*r/4
+            flipper *= -1
+            town_spaces.append((ox_adj,oy_adj))
+        print(hexes_in_row)
+        counter_sign+=1
+        #Increase or decrease hexes in row:
+        hexes_in_row+= -np.sign(counter_sign)
+        oy += r + r/4 +15
+        ox += math.sqrt(3)/2*r*np.sign(counter_sign)
+        if counter_sign == 0:
+            flipper*=-1
+        flipper*=-1
+    
+
+
+    return town_spaces
+        
+
+
+        
+
+
+
 
 mapseed = [rd.randint(0,4) for i in range(19)] #Not MapGen, just placeholder list
 number_on_tile = [1 for i in range(19)] # Placeholder number placement
