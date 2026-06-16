@@ -44,7 +44,7 @@ def generateTownSpaces(tile_centres, r):
     cy -= r/2-5
     ox, oy = cx, cy - r/4
     ox_adj, oy_adj = ox, oy
-    counter_sign = -3
+    counter_sign = -3 #Ensures hex increases for three lines, then decreases
     hexes_in_row = 3
     flipper = 1
     town_spaces =[]
@@ -61,7 +61,7 @@ def generateTownSpaces(tile_centres, r):
         hexes_in_row+= -np.sign(counter_sign)
         oy += r + r/4 +15
         ox += math.sqrt(3)/2*r*np.sign(counter_sign)
-        if counter_sign == 0:
+        if counter_sign == 0: 
             flipper*=-1
         flipper*=-1
     
