@@ -134,7 +134,6 @@ while running:
     #Dice
     throw_dice_btn.draw(mouse_pos, cur_game_state)
     if cur_dice_state=="Animating":
-        print("animating")
         now = pygame.time.get_ticks()
         if now - last_frame_time > FRAME_DURATION:
             current_frame += 1
@@ -142,8 +141,10 @@ while running:
             if current_frame >= NUM_FRAMES:
                 current_frame = NUM_FRAMES - 1
                 cur_dice_state = "Done"
-    frame_rect = pygame.Rect(current_frame * FRAME_W, 0, FRAME_W, FRAME_H)
-    frame_surf = roll_spritesheet.subsurface(frame_rect)
+                roll_value, frame_surf = calculateRoll()
+    if cur_dice_state in ["Ready", "Animating"]:
+        frame_rect = pygame.Rect(current_frame * FRAME_W, 0, FRAME_W, FRAME_H)
+        frame_surf = roll_spritesheet.subsurface(frame_rect)
 
     
 
