@@ -59,7 +59,7 @@ class Button:
         else:
             self.clickable = False
 
-    def draw_icon(self, mouse_pos, gamestate):
+    def draw_icon(self, mouse_pos, gamestate, icon):
         if str(gamestate) in self.visible_in_game_state:
             self.clickable = True
             if self.rect.collidepoint(mouse_pos):
@@ -70,10 +70,9 @@ class Button:
                 c = self.color
                 rect = self.rect
                 btn_font_final = self.font
-
+            
             pygame.draw.rect(screen, c, rect, border_radius=8)
-            lbl = btn_font_final.render(self.label, True, BTN_TEXT)
-            screen.blit(lbl, lbl.get_rect(center=self.rect.center))
+            icon.draw(mouse_pos, screen)
         else:
             self.clickable = False
 
