@@ -25,3 +25,7 @@ def whosTurn(player, playerCount):
     else:
         player=1
     return player
+
+#Resource collection
+def collectCards(towns, tiles, ):
+    pass

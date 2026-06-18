@@ -59,6 +59,23 @@ class Button:
         else:
             self.clickable = False
 
+    def draw_icon(self, mouse_pos, gamestate, icon):
+        if str(gamestate) in self.visible_in_game_state:
+            self.clickable = True
+            if self.rect.collidepoint(mouse_pos):
+                rect = self.hover_rect
+                c = self.hover_color
+                btn_font_final = self.hover_font 
+            else:
+                c = self.color
+                rect = self.rect
+                btn_font_final = self.font
+            
+            pygame.draw.rect(screen, c, rect, border_radius=8)
+            icon.draw(mouse_pos, screen)
+        else:
+            self.clickable = False
+
     def is_clicked(self, mouse_pos):
         if self.clickable:
             return self.rect.collidepoint(mouse_pos)

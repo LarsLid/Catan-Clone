@@ -33,6 +33,5 @@ def calculateRoll():
     combined_result_surf = pygame.Surface((FRAME_W, FRAME_H), pygame.SRCALPHA)
     combined_result_surf.blit(die1_surf, (0,0))
     combined_result_surf.blit(die2_surf, (FRAME_W//2,0))
-    print(die1_value, die2_value)
 
     return roll_value, combined_result_surf

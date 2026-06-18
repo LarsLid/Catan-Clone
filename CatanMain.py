@@ -72,13 +72,12 @@ def placeTiles (tile_centres, town_spaces, mouse_pos):
         number_pieces[number_piece] = NumberPiece(number_on_tile[i], (cx,cy))
         number_pieces[number_piece].draw()
 
+    town_lockon = (0,0)
     for i in range(len(town_spaces)):
         hoverCheck = pygame.Rect(town_spaces[i][0]-20, town_spaces[i][1]-20, 40, 40)
         if hoverCheck.collidepoint(mouse_pos):
             pygame.draw.circle(screen, (0,255,0), town_spaces[i], 10)
-            print(isPlacing)
-            if isPlacing:
-                town_lockon = (town_spaces[i][0], town_spaces[i][1])
+            town_lockon = (town_spaces[i][0], town_spaces[i][1])
         
 
 #BOOTUP CODE
@@ -88,11 +87,17 @@ tile_centres = BoardSetup(r)
 town_spaces_main = generateTownSpaces(tile_centres, r)
 mapGen(mapseed, number_on_tile, CENTER_DESERT)
 
+player_towns = None
+
     #First dice image
 frame_rect = pygame.Rect(current_frame * FRAME_W, 0, FRAME_W, FRAME_H)
 frame_surf = roll_spritesheet.subsurface(frame_rect)
+    #Town Icon for store
+icon_town = Town(5)
+icon_town.pos = (WIDTH //1.1, HEIGHT//4)
 
 isPlacing = False
+canPlace = False
 running = True
 while running:
     mouse_pos = pygame.mouse.get_pos()
@@ -119,11 +124,10 @@ while running:
                 for idx, btn in enumerate(player_btns):
                     if btn.is_clicked(mouse_pos):
                         playerCount = idx+2
-                        firstRound(playerCount)
+                        player_towns = firstRound(playerCount)
                         player = whosTurn(player, playerCount)
                         print(f"PLAYER {player}'S TURN")
                         cur_game_state = "FirstRound"
-                        new_town = Town(player)
                         town_lockon = (0,0)
                         show_player_selection = False
                         break
@@ -131,6 +135,15 @@ while running:
                 current_frame = 0
                 cur_dice_state = "Animating"
                 last_frame_time = pygame.time.get_ticks()
+            elif town_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"]:
+                isPlacing = True
+                new_town = Town(player)
+            elif isPlacing and town_lockon != (0,0):
+                new_town.pos = town_lockon
+                new_town.placed = True
+                isPlacing = False
+                new_town.adjacent = findAdjacent(new_town, tile_centres, number_on_tile, r)
+                player_towns[player].append(new_town)
 
     screen.fill(BG_COLOR)
 
@@ -154,6 +167,10 @@ while running:
     #Dice
     throw_dice_btn.draw(mouse_pos, cur_game_state)
     if cur_dice_state=="Animating":
+        
+        frame_rect = pygame.Rect(current_frame * FRAME_W, 0, FRAME_W, FRAME_H)
+        frame_surf = roll_spritesheet.subsurface(frame_rect)
+
         now = pygame.time.get_ticks()
         if now - last_frame_time > FRAME_DURATION:
             current_frame += 1
@@ -163,9 +180,7 @@ while running:
                 cur_dice_state = "Done"
                 roll_value, frame_surf = calculateRoll()
 
-        frame_rect = pygame.Rect(current_frame * FRAME_W, 0, FRAME_W, FRAME_H)
-        frame_surf = roll_spritesheet.subsurface(frame_rect)
-
+    
     
 
 
@@ -173,18 +188,27 @@ while running:
 
     placeTiles(tile_centres, town_spaces_main, mouse_pos)
     if cur_game_state in ["FirstRound","ReadyToRoll", "PlayerTurn"]:
-        screen.blit(frame_surf, (WIDTH//1.6, HEIGHT//1.2)) #Dice
+        #Dice
+        screen.blit(frame_surf, (WIDTH//1.6, HEIGHT//1.2)) 
+        #CardHolder UI
         card_area_rect = pygame.Rect(20, HEIGHT//1.25, WIDTH//1.7, 130)
         fg_rect = pygame.Rect(40, HEIGHT//1.25, WIDTH//1.8, 110)
         pygame.draw.rect(screen, (102, 62, 17), card_area_rect)
         pygame.draw.rect(screen, (186, 118, 41), fg_rect)
+        #Store
+        town_store_btn = Button(None,  icon_town.pos[0], icon_town.pos[1]-15, 90, 80, ["FirstRound", "PlayerTurn"])
+        town_store_btn.draw_icon(mouse_pos, cur_game_state, icon_town)
 
-    if cur_game_state == "FirstRound":
-        print(town_lockon[0], town_lockon[1])
-        isPlacing = True
+
+    #Draw player Towns
+    if player_towns != None:
+        for lists in player_towns:
+            for town in lists:
+                town.draw(mouse_pos, screen)
+
+
+    if isPlacing:
         placeTown(player, new_town, mouse_pos, screen, town_lockon)
-    else:
-        isPlacing = False
 
     pygame.display.flip()
     clock.tick(60)
