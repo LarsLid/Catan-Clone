@@ -101,5 +101,11 @@ class Town:
             pygame.draw.polygon(screen, color, pts)
         
 
-        
+class Road:
+     def __init__(self, team):
+        self.pos = 0
+        self.team = team
+        self.color = color_team[self.team-1]
+        self.size = 1
+        self.placed = False
     

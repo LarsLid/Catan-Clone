@@ -83,7 +83,7 @@ def placeTiles (tile_centres, town_spaces, mouse_pos):
 #BOOTUP CODE
 
 tile_centres = BoardSetup(r)
-
+road_centres = generateRoadSpaces(tile_centres, screen, r)
 town_spaces_main = generateTownSpaces(tile_centres, r)
 mapGen(mapseed, number_on_tile, CENTER_DESERT)
 
@@ -129,7 +129,7 @@ while running:
                         town_lockon = (0,0)
                         show_player_selection = False
                         break
-            elif throw_dice_btn.is_clicked(mouse_pos) and cur_dice_state=="Ready":
+            elif throw_dice_btn.is_clicked(mouse_pos) and cur_dice_state=="Ready" and cur_game_state == "ReadyToRoll":
                 current_frame = 0
                 cur_dice_state = "Animating"
                 last_frame_time = pygame.time.get_ticks()
@@ -212,6 +212,13 @@ while running:
     #Debug
     game_state_lbl = InfoText(f"{cur_game_state}", 80, 30, 150, 50, player, visible_in_game_state=["Menu", "FirstRound", "ReadyToRoll", "PlayerTurn", "Trade(?)", "Victory"])
     game_state_lbl.draw(mouse_pos, cur_game_state)
+
+    #Draw road points
+    for i in road_centres:
+        pygame.draw.circle(screen, (255,0,0), i, 10)
+    
+
+
     pygame.display.flip()
     clock.tick(60)
 

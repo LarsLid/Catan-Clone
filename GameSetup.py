@@ -64,13 +64,44 @@ def generateTownSpaces(tile_centres, r):
         if counter_sign == 0: 
             flipper*=-1
         flipper*=-1
-    
-
-
     return town_spaces
         
 
+def generateRoadSpaces(tile_centres,screen, r):
+    s = math.sqrt(3)/2*r
+    x1, y1 = tile_centres[0]
+    x1 -= math.sqrt(3)/2*r
+    y1 -= 3*r/4
+    counter_sign = -3 #Ensures hex increases for three lines, then decreases
+    hexes_in_row = 3
+    flipper = 1
+    odd_after_middle = 0
+    road_centres = []
+    for i in range(6):
+        for j in range(hexes_in_row*2+1):
+            x1_adj = x1+j*s
+            y1_adj = y1+flipper*r/4
+            if j<hexes_in_row*2:
+                flipper *= -1
+                road_centres.append((x1_adj+s/2, y1_adj+flipper*r/4))
+                pygame.draw.line(screen, (255,0,0), (x1_adj, y1_adj), (x1_adj+s, y1_adj+flipper*r/2), 4)
+            if j % 2 == odd_after_middle and i<5:
+                road_centres.append((x1_adj, y1_adj+r/2))
+                pygame.draw.line(screen, (255,0,0), (x1_adj, y1_adj), (x1_adj, y1_adj+r), 4)
 
+        
+        counter_sign+=1
+        #Increase or decrease hexes in row:
+        hexes_in_row+= -np.sign(counter_sign)
+        y1 += r + r/4 +16
+        x1 += s*np.sign(counter_sign)
+        if counter_sign == 0:
+            flipper*=-1
+            odd_after_middle = 1
+    print(f"len: {len(road_centres)}")
+    return road_centres
+        
+    
         
 
 
