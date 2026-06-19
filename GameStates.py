@@ -19,12 +19,16 @@ GameStates = ["Menu", "FirstRound", "ReadyToRoll", "PlayerTurn", "Trade(?)", "Vi
 cur_game_state = "Menu"
 print(cur_game_state)
 
-def whosTurn(player, playerCount):
+
+def endTurn(player, playerCount):
+    cur_game_state = "ReadyToRoll"
+    cur_dice_state = "Ready"
     if player< playerCount:
         player+=1
     else:
         player=1
-    return player
+    return player, cur_game_state, cur_dice_state
+
 
 #Resource collection
 def collectCards(towns, tiles, ):

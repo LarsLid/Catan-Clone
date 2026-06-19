@@ -32,6 +32,17 @@ def placeTown(team, new_town, mouse_pos, screen, town_lockon):
             new_town.pos = mouse_pos
     new_town.draw(mouse_pos, screen)
 
+def canPlaceCheck (new_town, screen, player_towns, r):
+    x,y = new_town.pos
+    for lists in player_towns:
+        for town in lists:
+             dx = x-town.pos[0]
+             dy = y-town.pos[1]
+             d=math.sqrt(dx**2+dy**2)
+             if d <= r*1.2:
+                  return False
+    return True
+
 def findAdjacent(new_town, tile_centres, number_on_tile, r):
     s = math.sqrt(3)/2*r
     adjacent = []

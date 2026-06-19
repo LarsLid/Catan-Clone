@@ -97,7 +97,6 @@ icon_town = Town(5)
 icon_town.pos = (WIDTH //1.1, HEIGHT//4)
 
 isPlacing = False
-canPlace = False
 running = True
 while running:
     mouse_pos = pygame.mouse.get_pos()
@@ -111,9 +110,8 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if endturn_btn.is_clicked(mouse_pos):
                 if playerCount != None:
-                    player = whosTurn(player, playerCount)
+                    player, cur_game_state, cur_dice_state = endTurn(player, playerCount)
                     print(f"PLAYER {player}'S TURN")
-                    cur_dice_state="Ready"
             elif gen_btn.is_clicked(mouse_pos):
                 mapGen(mapseed, number_on_tile, CENTER_DESERT)
             elif toggle_btn.is_clicked(mouse_pos):
@@ -125,7 +123,7 @@ while running:
                     if btn.is_clicked(mouse_pos):
                         playerCount = idx+2
                         player_towns = firstRound(playerCount)
-                        player = whosTurn(player, playerCount)
+                        player = 1
                         print(f"PLAYER {player}'S TURN")
                         cur_game_state = "FirstRound"
                         town_lockon = (0,0)
@@ -138,12 +136,12 @@ while running:
             elif town_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"]:
                 isPlacing = True
                 new_town = Town(player)
-            elif isPlacing and town_lockon != (0,0):
+            elif isPlacing and town_lockon != (0,0) and canPlaceCheck(new_town, screen, player_towns, r):
                 new_town.pos = town_lockon
                 new_town.placed = True
                 isPlacing = False
                 new_town.adjacent = findAdjacent(new_town, tile_centres, number_on_tile, r)
-                player_towns[player].append(new_town)
+                player_towns[player-1].append(new_town)
 
     screen.fill(BG_COLOR)
 
@@ -160,7 +158,7 @@ while running:
         startgame_btn.draw(mouse_pos, cur_game_state)
 
     #Draw Text
-    placeTownInfo = InfoText(None,cx//0.7, cy//3.5, 580, 40, player, ["FirstRound"])
+    placeTownInfo = InfoText(None,cx//0.7, cy//3.5, 580, 40, player, ["FirstRound", "ReadyToRoll"])
     placeTownInfo.label = f"PLAYER {placeTownInfo.player}'s TURN: PLACE 1 TOWN AND 1 ROAD"
     placeTownInfo.draw(mouse_pos, cur_game_state)
 
@@ -179,6 +177,7 @@ while running:
                 current_frame = NUM_FRAMES - 1
                 cur_dice_state = "Done"
                 roll_value, frame_surf = calculateRoll()
+                cur_game_state = "PlayerTurn"
 
     
     
@@ -196,7 +195,7 @@ while running:
         pygame.draw.rect(screen, (102, 62, 17), card_area_rect)
         pygame.draw.rect(screen, (186, 118, 41), fg_rect)
         #Store
-        town_store_btn = Button(None,  icon_town.pos[0], icon_town.pos[1]-15, 90, 80, ["FirstRound", "PlayerTurn"])
+        town_store_btn = Button(None,  icon_town.pos[0], icon_town.pos[1]-15, 90, 80, ["FirstRound", "ReadyToRoll", "PlayerTurn"])
         town_store_btn.draw_icon(mouse_pos, cur_game_state, icon_town)
 
 
@@ -210,6 +209,9 @@ while running:
     if isPlacing:
         placeTown(player, new_town, mouse_pos, screen, town_lockon)
 
+    #Debug
+    game_state_lbl = InfoText(f"{cur_game_state}", 80, 30, 150, 50, player, visible_in_game_state=["Menu", "FirstRound", "ReadyToRoll", "PlayerTurn", "Trade(?)", "Victory"])
+    game_state_lbl.draw(mouse_pos, cur_game_state)
     pygame.display.flip()
     clock.tick(60)
 
