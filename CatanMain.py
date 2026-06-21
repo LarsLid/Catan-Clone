@@ -219,32 +219,36 @@ while running:
         pygame.draw.rect(screen, (102, 62, 17), card_area_rect)
         pygame.draw.rect(screen, (186, 118, 41), fg_rect)
         #Store
-        town_store_btn.draw_icon(mouse_pos, cur_game_state, icon_town)
-        road_store_btn.draw_icon(mouse_pos, cur_game_state, icon_road)
+        town_store_btn.draw_icon(mouse_pos, cur_game_state, icon_town,r)
+        road_store_btn.draw_icon(mouse_pos, cur_game_state, icon_road,r)
 
 
     #Draw player Towns
     if player_towns != None:
+        for lists in player_roads:
+            for road in lists:
+                road.draw(mouse_pos, screen,r, road_centres, road_orientation, building_lockon)
         for lists in player_towns:
             for town in lists:
                 town.draw(mouse_pos, screen)
-        for lists in player_roads:
-            for road in lists:
-                road.draw(mouse_pos, screen)
+        
 
 
     if isPlacingTown:
-        placeBuilding(player, new_town, mouse_pos, screen, building_lockon)
+        placeBuilding(player, new_town,r, mouse_pos, screen, building_lockon, "town")
     elif isPlacingRoad:
-        placeBuilding(player, new_road, mouse_pos, screen, building_lockon)
+        placeBuilding(player, new_road,r, mouse_pos, screen, building_lockon, "road", road_centres, road_orientation, )
 
     #Debug
     game_state_lbl = InfoText(f"{cur_game_state}", 80, 30, 150, 50, player, visible_in_game_state=["Menu", "FirstRound", "ReadyToRoll", "PlayerTurn", "Trade(?)", "Victory"])
     game_state_lbl.draw(mouse_pos, cur_game_state)
 
     #Draw road points
-    for i in road_centres:
+    """
+        for i in road_centres:
         pygame.draw.circle(screen, (255,0,0), i, 10)
+    """
+
     
     pygame.display.flip()
     clock.tick(60)

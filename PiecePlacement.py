@@ -34,6 +34,19 @@ def placeBuilding(team, new_building, mouse_pos, screen, building_lockon):
             new_building.pos = mouse_pos
     new_building.draw(mouse_pos, screen)
 
+def placeBuilding(team, new_building,r, mouse_pos, screen, building_lockon, placingWhat, 
+                  road_centres=None, road_orientation=None):
+    if not new_building.placed:
+        if building_lockon != (0,0):
+            new_building.pos = building_lockon
+        else:
+            new_building.pos = mouse_pos
+    if placingWhat == "road":
+        new_building.draw(mouse_pos, screen,r, road_centres, road_orientation, building_lockon)
+    elif placingWhat == "town":
+        new_building.draw(mouse_pos, screen)
+
+
 def canPlaceCheck (new_building, screen, primary_list, secondary_list, r, placingWhat, player):
     x,y = new_building.pos
     if placingWhat == "town":
@@ -103,7 +116,7 @@ class Town:
         self.size = 1
         self.placed = False
 
-    def draw(self, mouse_pos, screen):
+    def draw(self, mouse_pos, screen, r=None):
         x, y = self.pos
         oy = y - 12
 
@@ -130,11 +143,44 @@ class Road:
         self.color = color_team[self.team-1]
         self.size = 1
         self.placed = False
+        self.orientation = "hor"
+        
 
     
-    def draw(self, mouse_pos, screen, road_orientation=None):
+    def draw(self, mouse_pos, screen,r, road_centres=None, road_orientation=None, road_lockon=None):
         x, y = self.pos
-        pygame.draw.line(screen, (0,0,0), (x-23,y), (x+23,y), 16)
-        pygame.draw.line(screen, self.color, (x-20,y), (x+20,y), 10)
+        r1=r*0.8
+        s1=math.sqrt(3)/2*r1
+        r2=r1*0.8
+        s2=s1*0.8
+
+        if self.placed:
+            pass
+        else:
+            if road_lockon != (0,0):
+                if self.team == 5:
+                    self.orientation = "hor"
+                elif road_centres is not None:
+                    index = road_centres.index(self.pos)
+                    self.orientation = road_orientation[index]
+            else:
+                self.orientation = "hor"
+
+        if self.orientation == "leftup":
+            pygame.draw.line(screen, (0,0,0), (x-s1/2,y-r1/4), (x+s1/2,y+r1/4), 12)
+            pygame.draw.line(screen, self.color, (x-s2/2,y-r2/4), (x+s2/2,y+r2/4), 8)
+        elif self.orientation == "rightup":
+            pygame.draw.line(screen, (0,0,0), (x-s1/2,y+r1/4), (x+s1/2,y-r1/4), 12)
+            pygame.draw.line(screen, self.color, (x-s2/2,y+r2/4), (x+s2/2,y-r2/4), 8)
+        elif self.orientation == "vert":
+            pygame.draw.line(screen, (0,0,0), (x,y+r1/2), (x,y-r1/2), 12)
+            pygame.draw.line(screen, self.color, (x,y+r2/2), (x,y-r2/2), 8)
+        elif self.orientation == "hor":
+            pygame.draw.line(screen, (0,0,0), (x-r1/2,y), (x+r1/2,y), 12)
+            pygame.draw.line(screen, self.color, (x-r2/2,y), (x+r2/2,y), 8)
+                 
+                  
+        
+        #GJØR TEGNING AVHENGIG AV ORIENTATION
 
      

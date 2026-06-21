@@ -59,7 +59,7 @@ class Button:
         else:
             self.clickable = False
 
-    def draw_icon(self, mouse_pos, gamestate, icon):
+    def draw_icon(self, mouse_pos, gamestate, icon,r):
         if str(gamestate) in self.visible_in_game_state:
             self.clickable = True
             if self.rect.collidepoint(mouse_pos):
@@ -70,7 +70,7 @@ class Button:
                 rect = self.rect
             
             pygame.draw.rect(screen, c, rect, border_radius=8)
-            icon.draw(mouse_pos, screen)
+            icon.draw(mouse_pos, screen,r)
         else:
             self.clickable = False
 
