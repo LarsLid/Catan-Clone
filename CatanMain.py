@@ -39,8 +39,7 @@ class NumberPiece:
         screen.blit(self.text, (self.text_top_corner_x,self.text_top_corner_y))
 
 
-def placeTiles (tile_centres, town_spaces, mouse_pos):
-    global building_lockon
+def placeTiles (tile_centres):
     if not tile_centres:
         return
 
@@ -72,13 +71,14 @@ def placeTiles (tile_centres, town_spaces, mouse_pos):
         number_pieces[number_piece] = NumberPiece(number_on_tile[i], (cx,cy))
         number_pieces[number_piece].draw()
 
+def findLockon (build_spaces, mouse_pos, screen):
     building_lockon = (0,0)
-    for i in range(len(town_spaces)):
-        hoverCheck = pygame.Rect(town_spaces[i][0]-20, town_spaces[i][1]-20, 40, 40)
+    for i in range(len(build_spaces)):
+        hoverCheck = pygame.Rect(build_spaces[i][0]-20, build_spaces[i][1]-20, 40, 40)
         if hoverCheck.collidepoint(mouse_pos):
-            pygame.draw.circle(screen, (0,255,0), town_spaces[i], 10)
-            building_lockon = (town_spaces[i][0], town_spaces[i][1])
-        
+            pygame.draw.circle(screen, (0,255,0), build_spaces[i], 10)
+            building_lockon = (build_spaces[i][0], build_spaces[i][1])
+    return building_lockon
 
 #BOOTUP CODE
 
@@ -88,6 +88,7 @@ town_spaces_main = generateTownSpaces(tile_centres, r)
 mapGen(mapseed, number_on_tile, CENTER_DESERT)
 
 player_towns = None
+player_roads = None
 
     #First dice image
 frame_rect = pygame.Rect(current_frame * FRAME_W, 0, FRAME_W, FRAME_H)
@@ -96,6 +97,9 @@ frame_surf = roll_spritesheet.subsurface(frame_rect)
 icon_town = Town(5)
 icon_town.pos = (WIDTH //1.1, HEIGHT//4)
 town_store_btn = Button(None,  icon_town.pos[0], icon_town.pos[1]-15, 90, 80, ["FirstRound", "ReadyToRoll", "PlayerTurn"])
+icon_road = Road(5)
+icon_road.pos = (WIDTH //1.1, HEIGHT//2.5)
+road_store_btn = Button(None, icon_road.pos[0], icon_road.pos[1]-15, 90, 80, ["FirstRound", "ReadyToRoll", "PlayerTurn"])
 
 
 isPlacingTown = False
@@ -125,7 +129,7 @@ while running:
                 for idx, btn in enumerate(player_btns):
                     if btn.is_clicked(mouse_pos):
                         playerCount = idx+2
-                        player_towns = firstRound(playerCount)
+                        player_towns, player_roads = firstRound(playerCount)
                         player = 1
                         print(f"PLAYER {player}'S TURN")
                         cur_game_state = "FirstRound"
@@ -137,15 +141,28 @@ while running:
                 cur_dice_state = "Animating"
                 last_frame_time = pygame.time.get_ticks()
             elif town_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"]:
-                isPlacingTown = True
-                new_town = Town(player)
-            elif isPlacingTown and building_lockon != (0,0) and canPlaceCheck(new_town, screen, player_towns, r):
+                if isPlacingTown:
+                    isPlacingTown = False
+                elif isPlacingTown == False and isPlacingRoad == False:
+                    isPlacingTown = True
+                    new_town = Town(player)
+            elif road_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"]:
+                if isPlacingRoad:
+                    isPlacingRoad = False
+                elif isPlacingRoad == False and isPlacingTown == False:
+                    isPlacingRoad = True
+                    new_road = Road(player)
+            elif isPlacingTown and building_lockon != (0,0) and canPlaceCheck(new_town, screen, player_towns, player_roads, r, "town", player):
                 new_town.pos = building_lockon
                 new_town.placed = True
                 isPlacingTown = False
                 new_town.adjacent = findAdjacent(new_town, tile_centres, number_on_tile, r)
                 player_towns[player-1].append(new_town)
-
+            elif isPlacingRoad and building_lockon != (0,0) and canPlaceCheck(new_road, screen, player_roads, player_towns, r, "road", player):
+                new_road.pos = building_lockon
+                new_road.placed = True
+                isPlacingRoad = False
+                player_roads[player-1].append(new_road)
     screen.fill(BG_COLOR)
 
     endturn_btn.draw(mouse_pos, cur_game_state)
@@ -188,7 +205,11 @@ while running:
 
 
 
-    placeTiles(tile_centres, town_spaces_main, mouse_pos)
+    placeTiles(tile_centres)
+    if isPlacingTown:
+        building_lockon = findLockon(town_spaces_main, mouse_pos, screen)
+    elif isPlacingRoad:
+        building_lockon = findLockon(road_centres, mouse_pos, screen)
     if cur_game_state in ["FirstRound","ReadyToRoll", "PlayerTurn"]:
         #Dice
         screen.blit(frame_surf, (WIDTH//1.6, HEIGHT//1.2)) 
@@ -199,6 +220,7 @@ while running:
         pygame.draw.rect(screen, (186, 118, 41), fg_rect)
         #Store
         town_store_btn.draw_icon(mouse_pos, cur_game_state, icon_town)
+        road_store_btn.draw_icon(mouse_pos, cur_game_state, icon_road)
 
 
     #Draw player Towns
@@ -206,10 +228,15 @@ while running:
         for lists in player_towns:
             for town in lists:
                 town.draw(mouse_pos, screen)
+        for lists in player_roads:
+            for road in lists:
+                road.draw(mouse_pos, screen)
 
 
     if isPlacingTown:
         placeBuilding(player, new_town, mouse_pos, screen, building_lockon)
+    elif isPlacingRoad:
+        placeBuilding(player, new_road, mouse_pos, screen, building_lockon)
 
     #Debug
     game_state_lbl = InfoText(f"{cur_game_state}", 80, 30, 150, 50, player, visible_in_game_state=["Menu", "FirstRound", "ReadyToRoll", "PlayerTurn", "Trade(?)", "Victory"])

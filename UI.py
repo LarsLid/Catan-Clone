@@ -65,11 +65,9 @@ class Button:
             if self.rect.collidepoint(mouse_pos):
                 rect = self.hover_rect
                 c = self.hover_color
-                btn_font_final = self.hover_font 
             else:
                 c = self.color
                 rect = self.rect
-                btn_font_final = self.font
             
             pygame.draw.rect(screen, c, rect, border_radius=8)
             icon.draw(mouse_pos, screen)
