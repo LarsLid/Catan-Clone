@@ -86,6 +86,7 @@ tile_centres = BoardSetup(r)
 road_centres, road_orientation = generateRoadSpaces(tile_centres, screen, r)
 town_spaces_main = generateTownSpaces(tile_centres, r)
 mapGen(mapseed, number_on_tile, CENTER_DESERT)
+snakedraft = 1
 
 player_towns = None
 player_roads = None
@@ -116,9 +117,8 @@ while running:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             if endturn_btn.is_clicked(mouse_pos):
-                if playerCount != None:
-                    player, cur_game_state, cur_dice_state = endTurn(player, playerCount)
-                    print(f"PLAYER {player}'S TURN")
+                player, cur_game_state, cur_dice_state, placed_first_town_road, snakedraft = endTurn(player, playerCount, cur_game_state, placed_first_town_road, snakedraft)
+                print(f"PLAYER {player}'S TURN")
             elif gen_btn.is_clicked(mouse_pos):
                 mapGen(mapseed, number_on_tile, CENTER_DESERT)
             elif toggle_btn.is_clicked(mouse_pos):
@@ -129,7 +129,7 @@ while running:
                 for idx, btn in enumerate(player_btns):
                     if btn.is_clicked(mouse_pos):
                         playerCount = idx+2
-                        player_towns, player_roads = firstRound(playerCount)
+                        player_towns, player_roads, placed_first_town_road = firstRound(playerCount)
                         player = 1
                         print(f"PLAYER {player}'S TURN")
                         cur_game_state = "FirstRound"
@@ -152,17 +152,19 @@ while running:
                 elif isPlacingRoad == False and isPlacingTown == False:
                     isPlacingRoad = True
                     new_road = Road(player)
-            elif isPlacingTown and building_lockon != (0,0) and canPlaceCheck(new_town, screen, player_towns, player_roads, r, "town", player):
+            elif isPlacingTown and building_lockon != (0,0) and canPlaceCheck(new_town, screen, player_towns, player_roads, r, "town", player, cur_game_state, placed_first_town_road):
                 new_town.pos = building_lockon
                 new_town.placed = True
                 isPlacingTown = False
                 new_town.adjacent = findAdjacent(new_town, tile_centres, number_on_tile, r)
                 player_towns[player-1].append(new_town)
-            elif isPlacingRoad and building_lockon != (0,0) and canPlaceCheck(new_road, screen, player_roads, player_towns, r, "road", player):
+                placed_first_town_road[player-1]+=1
+            elif isPlacingRoad and building_lockon != (0,0) and canPlaceCheck(new_road, screen, player_roads, player_towns, r, "road", player, cur_game_state, placed_first_town_road):
                 new_road.pos = building_lockon
                 new_road.placed = True
                 isPlacingRoad = False
                 player_roads[player-1].append(new_road)
+                placed_first_town_road[player-1]+=1
     screen.fill(BG_COLOR)
 
     endturn_btn.draw(mouse_pos, cur_game_state)

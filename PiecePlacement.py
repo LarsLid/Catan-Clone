@@ -13,6 +13,11 @@ color_team_4 = (43, 179, 20) #Green
 store = (84,84,84) #Store
 
 color_team = [color_team_1, color_team_2, color_team_3, color_team_4, store]
+Costs=[["brick", "wood"],
+       ["brick", "wood", "wheat", "sheep"],
+       ["wheat", "wheat", "ore", "ore", "ore"],
+       ["wheat", "sheep", "ore"]
+       ]
 
 
 
@@ -20,11 +25,13 @@ def firstRound(num_players):
     print(f"firstRound called with {num_players} players")
     player_towns = []
     player_roads = []
+    placed_first_town_road = []
     for i in range(num_players):
         player_towns.append([])
         player_roads.append([])
+        placed_first_town_road.append(0)
 
-    return player_towns, player_roads
+    return player_towns, player_roads, placed_first_town_road
 
 def placeBuilding(team, new_building, mouse_pos, screen, building_lockon):
     if not new_building.placed:
@@ -32,7 +39,7 @@ def placeBuilding(team, new_building, mouse_pos, screen, building_lockon):
             new_building.pos = building_lockon
         else:
             new_building.pos = mouse_pos
-    new_building.draw(mouse_pos, screen)
+    new_building.draw(mouse_pos, screen) #TROR DENNE BLIR OVERSKREVET
 
 def placeBuilding(team, new_building,r, mouse_pos, screen, building_lockon, placingWhat, 
                   road_centres=None, road_orientation=None):
@@ -47,10 +54,14 @@ def placeBuilding(team, new_building,r, mouse_pos, screen, building_lockon, plac
         new_building.draw(mouse_pos, screen)
 
 
-def canPlaceCheck (new_building, screen, primary_list, secondary_list, r, placingWhat, player):
+def canPlaceCheck (new_building, screen, primary_list, secondary_list, r, placingWhat, player, cur_game_state, placed_first_town_road):
     x,y = new_building.pos
     if placingWhat == "town":
-    
+        if cur_game_state == "FirstRound":
+            if placed_first_town_road[player-1] in [0,3]:
+                pass
+            else:
+                return False #Town road town road placed order on first round
         for lists in primary_list:
             for town in lists:
                 dx = x-town.pos[0]
@@ -60,24 +71,28 @@ def canPlaceCheck (new_building, screen, primary_list, secondary_list, r, placin
                     return False
         return True
     elif placingWhat == "road":
-            notStranded = False
-            for road in primary_list[player-1]: #Next to road from same player?
-                dx = x-road.pos[0]
-                dy = y-road.pos[1]
-                d=math.sqrt(dx**2+dy**2)
-                if d <= r*1.2:
-                    notStranded = True
-            for town in secondary_list[player-1]: #Next to town from same player?
-                dx = x-town.pos[0]
-                dy = y-town.pos[1]
-                d=math.sqrt(dx**2+dy**2)
-                if d <= r*1.2:
-                    notStranded = True
-            for players in primary_list: #On any existing road?
-                 for road in players:
-                      if math.isclose(road.pos[0], x) and math.isclose(road.pos[1], y):
-                           return False
-            return notStranded
+        if placed_first_town_road[player-1] in [1,4]:
+            pass
+        else:
+            return False #Town road town road placed order on first round
+        notStranded = False
+        for road in primary_list[player-1]: #Next to road from same player?
+            dx = x-road.pos[0]
+            dy = y-road.pos[1]
+            d=math.sqrt(dx**2+dy**2)
+            if d <= r*1.2:
+                notStranded = True
+        for town in secondary_list[player-1]: #Next to town from same player?
+            dx = x-town.pos[0]
+            dy = y-town.pos[1]
+            d=math.sqrt(dx**2+dy**2)
+            if d <= r*1.2:
+                notStranded = True
+        for players in primary_list: #On any existing road?
+                for road in players:
+                    if math.isclose(road.pos[0], x) and math.isclose(road.pos[1], y):
+                        return False
+        return notStranded
 
 def findAdjacent(new_town, tile_centres, number_on_tile, r):
     s = math.sqrt(3)/2*r

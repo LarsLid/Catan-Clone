@@ -59,6 +59,7 @@ class Button:
         else:
             self.clickable = False
 
+
     def draw_icon(self, mouse_pos, gamestate, icon,r):
         if str(gamestate) in self.visible_in_game_state:
             self.clickable = True

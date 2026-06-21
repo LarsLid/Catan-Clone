@@ -17,17 +17,35 @@ Victory = False
 
 GameStates = ["Menu", "FirstRound", "ReadyToRoll", "PlayerTurn", "Trade(?)", "Victory"]
 cur_game_state = "Menu"
-print(cur_game_state)
 
 
-def endTurn(player, playerCount):
-    cur_game_state = "ReadyToRoll"
-    cur_dice_state = "Ready"
-    if player< playerCount:
-        player+=1
+
+def endTurn(player, playerCount, cur_game_state, placed_first_town_road, snakedraft):
+    cur_dice_state = "Done"
+
+    if cur_game_state == "FirstRound":
+        if placed_first_town_road[player-1] in [2,5]:
+            pass
+        else:
+            return player, cur_game_state, cur_dice_state, placed_first_town_road, snakedraft
+        placed_first_town_road[player-1]+=1
+        if player==playerCount and snakedraft==1:
+            snakedraft = -1
+            player+=1 #Last player gets two consecutive turns
+        player+=snakedraft
+        if player==0 and snakedraft == -1:
+            cur_game_state = "ReadyToRoll"
+            cur_dice_state = "Ready"
+
     else:
-        player=1
-    return player, cur_game_state, cur_dice_state
+        cur_game_state = "ReadyToRoll"
+        cur_dice_state = "Ready"
+        if player< playerCount:
+            player+=1
+        else:
+            player=1
+
+    return player, cur_game_state, cur_dice_state, placed_first_town_road, snakedraft
 
 
 #Resource collection
