@@ -76,6 +76,7 @@ def generateRoadSpaces(tile_centres,screen, r):
     hexes_in_row = 3
     flipper = 1
     odd_after_middle = 0
+    road_orientation = []
     road_centres = []
     for i in range(6):
         for j in range(hexes_in_row*2+1):
@@ -84,9 +85,14 @@ def generateRoadSpaces(tile_centres,screen, r):
             if j<hexes_in_row*2:
                 flipper *= -1
                 road_centres.append((x1_adj+s/2, y1_adj+flipper*r/4))
+                if flipper == 1:
+                    road_orientation.append("leftup")
+                else:
+                    road_orientation.append("rightup")
                 pygame.draw.line(screen, (255,0,0), (x1_adj, y1_adj), (x1_adj+s, y1_adj+flipper*r/2), 4)
             if j % 2 == odd_after_middle and i<5:
                 road_centres.append((x1_adj, y1_adj+r/2))
+                road_orientation.append("vert")
                 pygame.draw.line(screen, (255,0,0), (x1_adj, y1_adj), (x1_adj, y1_adj+r), 4)
 
         
@@ -98,14 +104,10 @@ def generateRoadSpaces(tile_centres,screen, r):
         if counter_sign == 0:
             flipper*=-1
             odd_after_middle = 1
-    print(f"len: {len(road_centres)}")
-    return road_centres
+    for i in range(len(road_centres)):
+        print(f"Road {i}, pos: {road_centres[i]}, orientation: {road_orientation[i]}")
+    return road_centres, road_orientation
         
-    
-        
-
-
-
 
 mapseed = [rd.randint(0,4) for i in range(19)] #Not MapGen, just placeholder list
 number_on_tile = [1 for i in range(19)] # Placeholder number placement

@@ -24,13 +24,13 @@ def firstRound(num_players):
 
     return player_towns
 
-def placeTown(team, new_town, mouse_pos, screen, town_lockon):
-    if not new_town.placed:
-        if town_lockon != (0,0):
-            new_town.pos = town_lockon
+def placeBuilding(team, new_building, mouse_pos, screen, building_lockon):
+    if not new_building.placed:
+        if building_lockon != (0,0):
+            new_building.pos = building_lockon
         else:
-            new_town.pos = mouse_pos
-    new_town.draw(mouse_pos, screen)
+            new_building.pos = mouse_pos
+    new_building.draw(mouse_pos, screen)
 
 def canPlaceCheck (new_town, screen, player_towns, r):
     x,y = new_town.pos
@@ -79,7 +79,6 @@ class Town:
         self.adjacent = []
         self.size = 1
         self.placed = False
-        
 
     def draw(self, mouse_pos, screen):
         x, y = self.pos
@@ -102,10 +101,15 @@ class Town:
         
 
 class Road:
-     def __init__(self, team):
+    def __init__(self, team):
         self.pos = 0
         self.team = team
         self.color = color_team[self.team-1]
         self.size = 1
         self.placed = False
     
+    def draw(self, screen, road_orientation):
+        x, y = self.pos
+        oy = y - 12
+
+     
