@@ -36,6 +36,7 @@ def endTurn(player, playerCount, cur_game_state, placed_first_town_road, snakedr
         if player==0 and snakedraft == -1:
             cur_game_state = "ReadyToRoll"
             cur_dice_state = "Ready"
+            player = 1
 
     else:
         cur_game_state = "ReadyToRoll"
@@ -49,5 +50,10 @@ def endTurn(player, playerCount, cur_game_state, placed_first_town_road, snakedr
 
 
 #Resource collection
-def collectCards(towns, tiles, ):
-    pass
+def collectCards(player_towns, player_resources, tiles,number_on_tile, roll):
+    for player in range(len(player_towns)):
+        for town in player_towns[i]:
+            for tile in town.adjacent:
+                if roll in number_on_tile[tile]:
+                    player_resources[i]
+

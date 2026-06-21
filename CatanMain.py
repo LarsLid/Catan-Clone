@@ -91,10 +91,14 @@ snakedraft = 1
 player_towns = None
 player_roads = None
 
-    #First dice image
+#First dice image
 frame_rect = pygame.Rect(current_frame * FRAME_W, 0, FRAME_W, FRAME_H)
 frame_surf = roll_spritesheet.subsurface(frame_rect)
-    #Town Icon for store
+
+#Labels
+placeTownInfo = InfoText(None,cx//0.7, cy//3.5, 580, 40, 1, ["FirstRound"])
+
+#Town Icon for store
 icon_town = Town(5)
 icon_town.pos = (WIDTH //1.1, HEIGHT//4)
 town_store_btn = Button(None,  icon_town.pos[0], icon_town.pos[1]-15, 90, 80, ["FirstRound", "ReadyToRoll", "PlayerTurn"])
@@ -106,6 +110,8 @@ road_store_btn = Button(None, icon_road.pos[0], icon_road.pos[1]-15, 90, 80, ["F
 isPlacingTown = False
 isPlacingRoad = False
 running = True
+
+
 while running:
     mouse_pos = pygame.mouse.get_pos()
 
@@ -118,7 +124,7 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if endturn_btn.is_clicked(mouse_pos):
                 player, cur_game_state, cur_dice_state, placed_first_town_road, snakedraft = endTurn(player, playerCount, cur_game_state, placed_first_town_road, snakedraft)
-                print(f"PLAYER {player}'S TURN")
+                placeTownInfo = InfoText(None,cx//0.7, cy//3.5, 580, 40, player, ["FirstRound"])
             elif gen_btn.is_clicked(mouse_pos):
                 mapGen(mapseed, number_on_tile, CENTER_DESERT)
             elif toggle_btn.is_clicked(mouse_pos):
@@ -129,7 +135,7 @@ while running:
                 for idx, btn in enumerate(player_btns):
                     if btn.is_clicked(mouse_pos):
                         playerCount = idx+2
-                        player_towns, player_roads, placed_first_town_road = firstRound(playerCount)
+                        player_towns, player_roads, placed_first_town_road, player_resources = firstRound(playerCount)
                         player = 1
                         print(f"PLAYER {player}'S TURN")
                         cur_game_state = "FirstRound"
@@ -180,8 +186,11 @@ while running:
         startgame_btn.draw(mouse_pos, cur_game_state)
 
     #Draw Text
-    placeTownInfo = InfoText(None,cx//0.7, cy//3.5, 580, 40, player, ["FirstRound", "ReadyToRoll"])
-    placeTownInfo.label = f"PLAYER {placeTownInfo.player}'s TURN: PLACE 1 TOWN AND 1 ROAD"
+    if snakedraft == 1:
+        placeTownInfo.label = f"PLAYER {placeTownInfo.player}'s TURN: PLACE 1 TOWN AND 1 ROAD"
+    else:
+        placeTownInfo.color = (255,0,0)
+        placeTownInfo.label = f"PLAYER {placeTownInfo.player}'s TURN: PLACE 1 TOWN AND 1 ROAD AGAIN"
     placeTownInfo.draw(mouse_pos, cur_game_state)
 
     #Dice

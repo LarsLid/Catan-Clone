@@ -26,12 +26,16 @@ def firstRound(num_players):
     player_towns = []
     player_roads = []
     placed_first_town_road = []
+    player_resources = []
     for i in range(num_players):
         player_towns.append([])
         player_roads.append([])
         placed_first_town_road.append(0)
+        player_resources.append({"ore":0, "sheep":0, "brick":0, "wheat":0, "wood":0})
 
-    return player_towns, player_roads, placed_first_town_road
+    return player_towns, player_roads, placed_first_town_road, player_resources
+"""
+
 
 def placeBuilding(team, new_building, mouse_pos, screen, building_lockon):
     if not new_building.placed:
@@ -41,6 +45,7 @@ def placeBuilding(team, new_building, mouse_pos, screen, building_lockon):
             new_building.pos = mouse_pos
     new_building.draw(mouse_pos, screen) #TROR DENNE BLIR OVERSKREVET
 
+"""
 def placeBuilding(team, new_building,r, mouse_pos, screen, building_lockon, placingWhat, 
                   road_centres=None, road_orientation=None):
     if not new_building.placed:
@@ -59,9 +64,18 @@ def canPlaceCheck (new_building, screen, primary_list, secondary_list, r, placin
     if placingWhat == "town":
         if cur_game_state == "FirstRound":
             if placed_first_town_road[player-1] in [0,3]:
-                pass
+                notStranded = True
             else:
                 return False #Town road town road placed order on first round
+        else:
+            notStranded = False
+            for lists in secondary_list:
+                for road in secondary_list[player-1]: #Next to road from same player?
+                    dx = x-road.pos[0]
+                    dy = y-road.pos[1]
+                    d=math.sqrt(dx**2+dy**2)
+                    if d <= r*1.2:
+                        notStranded = True
         for lists in primary_list:
             for town in lists:
                 dx = x-town.pos[0]
@@ -69,12 +83,14 @@ def canPlaceCheck (new_building, screen, primary_list, secondary_list, r, placin
                 d=math.sqrt(dx**2+dy**2)
                 if d <= r*1.2:
                     return False
-        return True
+        if notStranded:
+            return True
     elif placingWhat == "road":
-        if placed_first_town_road[player-1] in [1,4]:
-            pass
-        else:
-            return False #Town road town road placed order on first round
+        if cur_game_state == "FirstRound":
+            if placed_first_town_road[player-1] in [1,4]:
+                pass
+            else:
+                return False #Town road town road placed order on first round
         notStranded = False
         for road in primary_list[player-1]: #Next to road from same player?
             dx = x-road.pos[0]
