@@ -55,7 +55,6 @@ def generateTownSpaces(tile_centres, r):
             oy_adj = oy+flipper*r/4
             flipper *= -1
             town_spaces.append((ox_adj,oy_adj))
-        print(hexes_in_row)
         counter_sign+=1
         #Increase or decrease hexes in row:
         hexes_in_row+= -np.sign(counter_sign)
@@ -104,8 +103,6 @@ def generateRoadSpaces(tile_centres,screen, r):
         if counter_sign == 0:
             flipper*=-1
             odd_after_middle = 1
-    for i in range(len(road_centres)):
-        print(f"Road {i}, pos: {road_centres[i]}, orientation: {road_orientation[i]}")
     return road_centres, road_orientation
         
 
@@ -147,5 +144,3 @@ def mapGen(mapseed, number_on_tile, cd):
             number_index =rd.randint(0,18-j)
             number_on_tile[i]=numbers[number_index]
             numbers.pop(number_index)
-
-print(mapseed)

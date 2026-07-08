@@ -146,6 +146,8 @@ while running:
                 current_frame = 0
                 cur_dice_state = "Animating"
                 last_frame_time = pygame.time.get_ticks()
+                roll_value, frame_surf_result = calculateRoll()
+                collectCards(player_towns, player_resources,number_on_tile , roll_value, mapseed)
             elif town_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"]:
                 if isPlacingTown:
                     isPlacingTown = False
@@ -207,8 +209,8 @@ while running:
             if current_frame >= NUM_FRAMES:
                 current_frame = NUM_FRAMES - 1
                 cur_dice_state = "Done"
-                roll_value, frame_surf = calculateRoll()
                 cur_game_state = "PlayerTurn"
+                frame_surf = frame_surf_result
 
     
     

@@ -50,10 +50,25 @@ def endTurn(player, playerCount, cur_game_state, placed_first_town_road, snakedr
 
 
 #Resource collection
-def collectCards(player_towns, player_resources, tiles,number_on_tile, roll):
-    for player in range(len(player_towns)):
+def collectCards(player_towns, player_resources, number_on_tile, roll, mapseed):
+    for i in range(len(player_towns)):
         for town in player_towns[i]:
             for tile in town.adjacent:
-                if roll in number_on_tile[tile]:
-                    player_resources[i]
+                if roll == number_on_tile[tile]:
+                    if mapseed[tile] == 0:
+                        player_resources[i]["ore"]+=1
+                    elif mapseed[tile] == 1:
+                        player_resources[i]["sheep"]+=1
+                    elif mapseed[tile] == 2:
+                        player_resources[i]["brick"]+=1
+                    elif mapseed[tile] == 3:
+                        player_resources[i]["wheat"]+=1
+                    elif mapseed[tile] == 4:
+                        player_resources[i]["timber"]+=1
+                    else:
+                        pass
+                    print(f"Tile {tile} has number {roll} and can be collected")
+    print(f"Current resource hands:")
+    for i in player_resources:
+        print(i)
 
