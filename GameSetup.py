@@ -13,26 +13,27 @@ def BoardSetup(r):
     tile_centres = []
     s= math.sqrt(3)/2*r
     h= r/2
-    board_height = 100
+    board_height = 80
+    board_padding_width = 120
     oy=board_height
     for i in range(3):
-        ox=100+2*s+2*s*i
+        ox=board_padding_width+2*s+2*s*i
         tile_centres.append((ox,oy))
     oy=board_height+(r+h)
     for i in range(4):
-        ox=100+s+2*s*i
+        ox=board_padding_width+s+2*s*i
         tile_centres.append((ox,oy))
     oy=board_height+2*(r+h)
     for i in range(5):
-        ox=100+2*s*i
+        ox=board_padding_width+2*s*i
         tile_centres.append((ox,oy))
     oy=board_height+3*(r+h)
     for i in range(4):
-        ox=100+s+2*s*i
+        ox=board_padding_width+s+2*s*i
         tile_centres.append((ox,oy))
     oy=board_height+4*(r+h)
     for i in range(3):
-        ox=100+2*s+2*s*i
+        ox=board_padding_width+2*s+2*s*i
         tile_centres.append((ox,oy))
     
 

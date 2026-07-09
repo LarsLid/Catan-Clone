@@ -234,7 +234,13 @@ while running:
         pygame.draw.rect(screen, (102, 62, 17), card_area_rect)
         pygame.draw.rect(screen, (186, 118, 41), fg_rect)
 
-        drawCards(player_resources, player-1, card_types)
+        drawCards(player_resources, player-1, card_types, mouse_pos)
+
+        """
+        testCard = Card(card_types[1], 0, 400, 100)
+        testCard.draw()
+        """
+
 
         #Store
         town_store_btn.draw_icon(mouse_pos, cur_game_state, icon_town,r)

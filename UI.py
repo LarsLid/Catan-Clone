@@ -136,12 +136,13 @@ class InfoText:
             screen.blit(lbl, lbl.get_rect(center=self.rect.center))
 
 class Card:
-    def __init__(self, card_img, player,x,y, max_w = 75, max_h = 150):
+    def __init__(self, card_img, player,x,y, max_w = 60, max_h = 120):
         self.img = card_img
         self.player = player
         self.color = color_team[player]
         self.x = x
         self.y = y
+        
         iw, ih = self.img.get_size()
         scale = min(max_w / iw, max_h / ih, 1)
         new_w = max(1, int(iw * scale))
@@ -149,59 +150,75 @@ class Card:
 
         self.scaled_card = pygame.transform.smoothscale(self.img, (new_w, new_h))
 
+
         self.w_card, self.h_card = self.scaled_card.get_size()
+        self.hover_card = pygame.transform.smoothscale(self.scaled_card, (self.w_card*1.1, self.h_card*1.1))
         self.w, self.h = self.w_card*1.1, self.h_card * 1.1
+        self.w_bg, self.h_bg = self.w *1.1, self.h*1.1
+
+        self.rect = pygame.Rect(self.x-self.w//2, self.y-self.h//2, int(self.w), int(self.h))
+        self.rect_bg = pygame.Rect(self.x-self.w_bg//2, self.y-self.h_bg//2, int(self.w_bg), int(self.h_bg))
+
+        self.hover_rect = self.rect.inflate(10,10)
+        self.hover_rect_bg = self.rect_bg.inflate(10,10)
     
-    def draw(self):
+    def draw(self, hover):
+        if hover:
+                rect = self.hover_rect
+                rect_bg = self.hover_rect_bg
+                card_img = self.hover_card
+                blit_pos = (self.x-(self.w_card*1.1)//2,self.y-(self.h_card*1.1)//2)
 
-        rect = pygame.Rect(self.x-self.w//2, self.y-self.h//2, int(self.w), int(self.h))
-        pygame.draw.rect(screen, self.color, rect)
-        blit_pos = (self.x-self.w_card//2,self.y-self.h_card//2)
-        screen.blit(self.scaled_card, blit_pos)
 
-def drawCards(player_resources, player, card_types):
-    n=0
-    for resource, amount in player_resources[player].items():
-        if resource == "ore" and amount>0:
-            offset = []
-            for i in range(amount):
-                offset.append((i*10, i*10))
-            for i in range(amount-1, -1, -1):
-                card = Card(card_types[0], player, 100+n*90+offset[i][0], HEIGHT//1.18+offset[i][0])
-                card.draw()
-            n+=1
-        elif resource == "sheep" and amount>0:
-            offset = []
-            for i in range(amount):
-                offset.append((i*10, i*10))
-            for i in range(amount-1, -1, -1):
-                card = Card(card_types[1], player, 100+n*90+offset[i][0], HEIGHT//1.18+offset[i][0])
-                card.draw()
-            n+=1
-        elif resource == "brick" and amount>0:
-            offset = []
-            for i in range(amount):
-                offset.append((i*10, i*10))
-            for i in range(amount-1, -1, -1):
-                card = Card(card_types[2], player, 100+n*90+offset[i][0], HEIGHT//1.18+offset[i][0])
-                card.draw()
-            n+=1
-        elif resource == "wheat" and amount>0:
-            offset = []
-            for i in range(amount):
-                offset.append((i*10, i*10))
-            for i in range(amount-1, -1, -1):
-                card = Card(card_types[3], player, 100+n*90+offset[i][0], HEIGHT//1.18+offset[i][0])
-                card.draw()
-            n+=1
-        elif resource == "timber" and amount>0:
-            offset = []
-            for i in range(amount):
-                offset.append((i*10, i*10))
-            for i in range(amount-1, -1, -1):
-                card = Card(card_types[4], player, 100+n*90+offset[i][0], HEIGHT//1.18+offset[i][0])
-                card.draw()
-            n+=1
         else:
-            continue
+                rect = self.rect
+                rect_bg = self.rect_bg
+                card_img = self.scaled_card
+                blit_pos = (self.x-self.w_card//2,self.y-self.h_card//2)
+
+        pygame.draw.rect(screen, (0,0,0), rect_bg, border_radius=10)
+        pygame.draw.rect(screen, self.color, rect, border_radius =10)
         
+        
+        screen.blit(card_img, blit_pos)
+
+        
+
+def drawCards(player_resources, player, card_types, mouse_pos):
+    n=0
+    spacing= 110
+    displace = 12
+    resource_indexes = ["ore", "sheep", "brick", "wheat", "timber"]
+    for resource, amount in player_resources[player].items():
+        card_type_index = resource_indexes.index(resource)
+        if amount>0:
+            offset = []
+            amountShown = 0
+            for i in range(amount):
+                if i >= 3: #Max three cards drawn
+                    break
+                amountShown+=1
+                offset.append((i*displace, i*displace))
+            pile_hover = []
+            pile = []
+
+            for i in range(amountShown-1, -1, -1):
+                card = Card(card_types[card_type_index], player, 100+n*spacing+offset[i][0], HEIGHT//1.18-offset[i][0])
+                if card.rect.collidepoint(mouse_pos):
+                    hover = True
+                else:
+                    hover = False
+                pile_hover.append(hover)
+                pile.append(card)
+            #Significant hover index
+            last_true_idx = next((i for i in range(len(pile_hover) - 1, -1, -1) if pile_hover[i]), None)
+            for card in pile:
+                if pile.index(card) == last_true_idx:
+                    card.draw(True)
+                else:
+                    card.draw(False)
+            amount_label = Button(str(amount),100+n*spacing, HEIGHT//1.2+40, 40, 40, ["ReadyToRoll", "PlayerTurn"])
+            amount_label.draw(mouse_pos, "PlayerTurn")
+            n+=1
+
+                
