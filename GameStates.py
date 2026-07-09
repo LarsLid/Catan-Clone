@@ -72,3 +72,6 @@ def collectCards(player_towns, player_resources, number_on_tile, roll, mapseed):
     for i in player_resources:
         print(i)
 
+
+
+

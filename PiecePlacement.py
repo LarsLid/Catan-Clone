@@ -31,7 +31,7 @@ def firstRound(num_players):
         player_towns.append([])
         player_roads.append([])
         placed_first_town_road.append(0)
-        player_resources.append({"ore":0, "sheep":0, "brick":0, "wheat":0, "wood":0})
+        player_resources.append({"ore":0, "sheep":0, "brick":0, "wheat":0, "timber":0})
 
     return player_towns, player_roads, placed_first_town_road, player_resources
 """

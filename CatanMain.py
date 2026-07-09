@@ -15,6 +15,7 @@ pygame.display.set_caption("Catan")
 
 player = 0
 tile_types = [ore_tile, sheep_tile, brick_tile, wheat_tile, timber_tile, desert_tile]
+card_types = [ore_card, sheep_card, brick_card, wheat_card, timber_card]
 
 
 #Numbers for resource yield
@@ -147,7 +148,7 @@ while running:
                 cur_dice_state = "Animating"
                 last_frame_time = pygame.time.get_ticks()
                 roll_value, frame_surf_result = calculateRoll()
-                collectCards(player_towns, player_resources,number_on_tile , roll_value, mapseed)
+                
             elif town_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"]:
                 if isPlacingTown:
                     isPlacingTown = False
@@ -210,6 +211,7 @@ while running:
                 current_frame = NUM_FRAMES - 1
                 cur_dice_state = "Done"
                 cur_game_state = "PlayerTurn"
+                collectCards(player_towns, player_resources,number_on_tile , roll_value, mapseed)
                 frame_surf = frame_surf_result
 
     
@@ -231,6 +233,9 @@ while running:
         fg_rect = pygame.Rect(40, HEIGHT//1.25, WIDTH//1.8, 110)
         pygame.draw.rect(screen, (102, 62, 17), card_area_rect)
         pygame.draw.rect(screen, (186, 118, 41), fg_rect)
+
+        drawCards(player_resources, player-1, card_types)
+
         #Store
         town_store_btn.draw_icon(mouse_pos, cur_game_state, icon_town,r)
         road_store_btn.draw_icon(mouse_pos, cur_game_state, icon_road,r)

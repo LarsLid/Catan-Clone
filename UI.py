@@ -15,12 +15,20 @@ BTN_TEXT  = (30, 30, 30)
 BOARD = (255, 198, 41)
 
 #Images
+#-Tiles
 ore_tile = pygame.image.load("images/ore_tile.png").convert_alpha()
 sheep_tile = pygame.image.load("images/sheep_tile.png").convert_alpha()
 brick_tile = pygame.image.load("images/brick_tile.png").convert_alpha()
 wheat_tile = pygame.image.load("images/wheat_tile.png").convert_alpha()
 timber_tile = pygame.image.load("images/timber_tile.png").convert_alpha()
 desert_tile = pygame.image.load("images/desert_tile.png").convert_alpha()
+
+#-Cards
+ore_card = pygame.image.load("images/ore_card.png").convert_alpha()
+sheep_card = pygame.image.load("images/sheep_card.png").convert_alpha()
+brick_card = pygame.image.load("images/brick_card.png").convert_alpha()
+wheat_card = pygame.image.load("images/wheat_card.png").convert_alpha()
+timber_card = pygame.image.load("images/timber_card.png").convert_alpha()
 
 font        = pygame.font.SysFont(None, 36)
 hover_font  = pygame.font.SysFont(None, 38)
@@ -107,6 +115,8 @@ color_team_1 = (209, 45, 0) #Red
 color_team_2 = (255, 255, 255) #White
 color_team_3 = (19, 62, 207) #Blue
 color_team_4 = (43, 179, 20) #Green
+store = (84,84,84) #Store
+color_team = [color_team_1, color_team_2, color_team_3, color_team_4, store]
 
 class InfoText:
     def __init__(self, label, cx, cy, w, h, player, visible_in_game_state=list, btn_font=None, color="white"):
@@ -125,3 +135,73 @@ class InfoText:
             lbl = self.font.render(self.label, True, BTN_TEXT)
             screen.blit(lbl, lbl.get_rect(center=self.rect.center))
 
+class Card:
+    def __init__(self, card_img, player,x,y, max_w = 75, max_h = 150):
+        self.img = card_img
+        self.player = player
+        self.color = color_team[player]
+        self.x = x
+        self.y = y
+        iw, ih = self.img.get_size()
+        scale = min(max_w / iw, max_h / ih, 1)
+        new_w = max(1, int(iw * scale))
+        new_h = max(1, int(ih * scale))
+
+        self.scaled_card = pygame.transform.smoothscale(self.img, (new_w, new_h))
+
+        self.w_card, self.h_card = self.scaled_card.get_size()
+        self.w, self.h = self.w_card*1.1, self.h_card * 1.1
+    
+    def draw(self):
+
+        rect = pygame.Rect(self.x-self.w//2, self.y-self.h//2, int(self.w), int(self.h))
+        pygame.draw.rect(screen, self.color, rect)
+        blit_pos = (self.x-self.w_card//2,self.y-self.h_card//2)
+        screen.blit(self.scaled_card, blit_pos)
+
+def drawCards(player_resources, player, card_types):
+    n=0
+    for resource, amount in player_resources[player].items():
+        if resource == "ore" and amount>0:
+            offset = []
+            for i in range(amount):
+                offset.append((i*10, i*10))
+            for i in range(amount-1, -1, -1):
+                card = Card(card_types[0], player, 100+n*90+offset[i][0], HEIGHT//1.18+offset[i][0])
+                card.draw()
+            n+=1
+        elif resource == "sheep" and amount>0:
+            offset = []
+            for i in range(amount):
+                offset.append((i*10, i*10))
+            for i in range(amount-1, -1, -1):
+                card = Card(card_types[1], player, 100+n*90+offset[i][0], HEIGHT//1.18+offset[i][0])
+                card.draw()
+            n+=1
+        elif resource == "brick" and amount>0:
+            offset = []
+            for i in range(amount):
+                offset.append((i*10, i*10))
+            for i in range(amount-1, -1, -1):
+                card = Card(card_types[2], player, 100+n*90+offset[i][0], HEIGHT//1.18+offset[i][0])
+                card.draw()
+            n+=1
+        elif resource == "wheat" and amount>0:
+            offset = []
+            for i in range(amount):
+                offset.append((i*10, i*10))
+            for i in range(amount-1, -1, -1):
+                card = Card(card_types[3], player, 100+n*90+offset[i][0], HEIGHT//1.18+offset[i][0])
+                card.draw()
+            n+=1
+        elif resource == "timber" and amount>0:
+            offset = []
+            for i in range(amount):
+                offset.append((i*10, i*10))
+            for i in range(amount-1, -1, -1):
+                card = Card(card_types[4], player, 100+n*90+offset[i][0], HEIGHT//1.18+offset[i][0])
+                card.draw()
+            n+=1
+        else:
+            continue
+        
