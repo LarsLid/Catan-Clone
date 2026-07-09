@@ -103,10 +103,14 @@ placeTownInfo = InfoText(None,cx//0.7, cy//3.5, 580, 40, 1, ["FirstRound"])
 icon_town = Town(5)
 icon_town.pos = (WIDTH //1.1, HEIGHT//4)
 town_store_btn = Button(None,  icon_town.pos[0], icon_town.pos[1]-15, 90, 80, ["FirstRound", "ReadyToRoll", "PlayerTurn"])
+#Price
+price_label_town = PriceLabel(Costs[1],WIDTH //1.3, HEIGHT//4.1,["FirstRound", "ReadyToRoll", "PlayerTurn"])
+
 icon_road = Road(5)
 icon_road.pos = (WIDTH //1.1, HEIGHT//2.5)
 road_store_btn = Button(None, icon_road.pos[0], icon_road.pos[1]-15, 90, 80, ["FirstRound", "ReadyToRoll", "PlayerTurn"])
-
+#Price
+price_label_road = PriceLabel(Costs[0],WIDTH //1.3, HEIGHT//2.6,["FirstRound", "ReadyToRoll", "PlayerTurn"])
 
 isPlacingTown = False
 isPlacingRoad = False
@@ -245,6 +249,9 @@ while running:
         #Store
         town_store_btn.draw_icon(mouse_pos, cur_game_state, icon_town,r)
         road_store_btn.draw_icon(mouse_pos, cur_game_state, icon_road,r)
+
+        price_label_town.draw(mouse_pos, cur_game_state, card_types)
+        price_label_road.draw(mouse_pos, cur_game_state, card_types)
 
 
     #Draw player Towns

@@ -13,8 +13,8 @@ color_team_4 = (43, 179, 20) #Green
 store = (84,84,84) #Store
 
 color_team = [color_team_1, color_team_2, color_team_3, color_team_4, store]
-Costs=[["brick", "wood"],
-       ["brick", "wood", "wheat", "sheep"],
+Costs=[["brick", "timber"],
+       ["brick", "timber", "wheat", "sheep"],
        ["wheat", "wheat", "ore", "ore", "ore"],
        ["wheat", "sheep", "ore"]
        ]

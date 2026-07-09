@@ -221,4 +221,37 @@ def drawCards(player_resources, player, card_types, mouse_pos):
             amount_label.draw(mouse_pos, "PlayerTurn")
             n+=1
 
-                
+class PriceLabel:
+    def __init__(self, price, x, y,visible_in_game_state,color=BTN_COLOR, hover_color=BTN_HOVER, ):
+        self.price = price
+        self.x = x
+        self.y = y
+        self.w, self.h = 230, 90
+        self.rect        = pygame.Rect(int(self.x - self.w // 2), int(self.y - self.h // 2), int(self.w), int(self.h))
+        self.hover_rect  = self.rect.inflate(7,7)
+        self.color       = color
+        self.hover_color = hover_color
+        self.visible_in_game_state = visible_in_game_state
+        self.clickable = False
+
+    def draw(self, mouse_pos, gamestate, card_types):
+        if str(gamestate) in self.visible_in_game_state:
+            self.clickable = True
+            if self.rect.collidepoint(mouse_pos):
+                rect = self.hover_rect
+                c = self.hover_color
+                hover=True
+            else:
+                c = self.color
+                rect = self.rect
+                hover=False
+
+            pygame.draw.rect(screen, c, rect, border_radius=8)
+            resource_indexes = ["ore", "sheep", "brick", "wheat", "timber"]
+            start_x = self.x+30-30*len(self.price)
+            for priceCard in self.price:
+                card_type_index = resource_indexes.index(priceCard)
+                card = Card(card_types[card_type_index], 4, start_x+self.price.index(priceCard)*60, self.y, 30, 60)
+                card.draw(hover)
+        else:
+            self.clickable = False
