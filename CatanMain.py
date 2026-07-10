@@ -16,7 +16,7 @@ pygame.display.set_caption("Catan")
 
 player = 0
 tile_types = [ore_tile, sheep_tile, brick_tile, wheat_tile, timber_tile, desert_tile]
-card_types = [ore_card, sheep_card, brick_card, wheat_card, timber_card]
+card_types = [ore_card, sheep_card, brick_card, wheat_card, timber_card, general_card]
 
 
 #Numbers for resource yield
@@ -141,9 +141,15 @@ city_store_btn = Button(None,  icon_town.pos[0], icon_city.pos[1]-15, 90, 80, ["
 price_label_city = PriceLabel(Costs[2],WIDTH //1.3, icon_city.pos[1]-15,["ReadyToRoll", "PlayerTurn"])
 
 
+#Trade Menu
+general_trade_basic = TradeLabel(trade_costs[0],WIDTH //1.3, icon_road.pos[1]-15,["ReadyToRoll", "PlayerTurn"])
+
 isPlacingTown = False
 isPlacingRoad = False
 isPlacingCity = False
+
+player_action_ui = "Build"
+
 running = True
 
 
@@ -160,6 +166,7 @@ while running:
             if endturn_btn.is_clicked(mouse_pos):
                 player, cur_game_state, cur_dice_state, placed_first_town_road, snakedraft = endTurn(player, playerCount, cur_game_state, placed_first_town_road, snakedraft)
                 placeTownInfo = InfoText(None,cx//0.7, cy//3.5, 580, 40, player, ["FirstRound"])
+                player_action_ui = "Build"
             elif gen_btn.is_clicked(mouse_pos):
                 mapGen(mapseed, number_on_tile, CENTER_DESERT)
             elif toggle_btn.is_clicked(mouse_pos):
@@ -176,15 +183,20 @@ while running:
                         cur_game_state = "FirstRound"
                         building_lockon = (0,0)
                         show_player_selection = False
-                        debugStart()
+                        debugStart() #Debug to test features faster, should be removed for normal play
                         break
             elif throw_dice_btn.is_clicked(mouse_pos) and cur_dice_state=="Ready" and cur_game_state == "ReadyToRoll":
                 current_frame = 0
                 cur_dice_state = "Animating"
                 last_frame_time = pygame.time.get_ticks()
                 roll_value, frame_surf_result = calculateRoll()
+
+            elif build_btn.is_clicked(mouse_pos) and cur_game_state == "PlayerTurn":
+                player_action_ui = "Build"
+            elif trade_btn.is_clicked(mouse_pos) and cur_game_state == "PlayerTurn":
+                player_action_ui = "Trade"
                 
-            elif town_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"]:
+            elif town_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"] and player_action_ui=="Build":
                 if isPlacingTown:
                     isPlacingTown = False
                 elif isPlacingTown == False and isPlacingRoad == False and isPlacingCity == False:
@@ -193,7 +205,7 @@ while running:
                             break
                     isPlacingTown = True
                     new_town = Town(player)
-            elif road_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"]:
+            elif road_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"] and player_action_ui=="Build":
                 if isPlacingRoad:
                     isPlacingRoad = False
                 elif isPlacingRoad == False and isPlacingTown == False and isPlacingCity == False:
@@ -202,7 +214,7 @@ while running:
                             break
                     isPlacingRoad = True
                     new_road = Road(player)
-            elif city_store_btn.is_clicked(mouse_pos) and cur_game_state in ["PlayerTurn"]:
+            elif city_store_btn.is_clicked(mouse_pos) and cur_game_state in ["PlayerTurn"] and player_action_ui=="Build":
                 if isPlacingCity:
                     isPlacingCity = False
                 elif isPlacingTown == False and isPlacingRoad == False and isPlacingCity == False:
@@ -255,7 +267,14 @@ while running:
     gen_btn.draw(mouse_pos, cur_game_state)
     toggle_btn.label = f"CENTER DESERT: {'ON' if CENTER_DESERT else 'OFF'}"
     toggle_btn.color = (120, 220, 120) if CENTER_DESERT else BTN_COLOR
+    toggle_btn.hover_color = (120,225, 120) if CENTER_DESERT else BTN_HOVER
     toggle_btn.draw(mouse_pos, cur_game_state)
+    build_btn.color = (120, 220, 120) if player_action_ui=="Build" else BTN_COLOR
+    build_btn.hover_color = (120,225, 120) if player_action_ui=="Build" else BTN_HOVER
+    build_btn.draw(mouse_pos, cur_game_state)
+    trade_btn.color = (120, 220, 120) if player_action_ui=="Trade" else BTN_COLOR
+    trade_btn.hover_color = (120,225, 120) if player_action_ui=="Trade" else BTN_HOVER
+    trade_btn.draw(mouse_pos, cur_game_state)
 
     if show_player_selection:
         for btn in player_btns:
@@ -322,15 +341,17 @@ while running:
         testCard.draw()
         """
 
-
         #Store
-        road_store_btn.draw_icon(mouse_pos, cur_game_state, icon_road,r)
-        town_store_btn.draw_icon(mouse_pos, cur_game_state, icon_town,r)
-        city_store_btn.draw_icon(mouse_pos, cur_game_state, icon_city,r)
+        if player_action_ui == "Build":
+            road_store_btn.draw_icon(mouse_pos, cur_game_state, icon_road,r)
+            town_store_btn.draw_icon(mouse_pos, cur_game_state, icon_town,r)
+            city_store_btn.draw_icon(mouse_pos, cur_game_state, icon_city,r)
 
-        price_label_road.draw(mouse_pos, cur_game_state, card_types)
-        price_label_town.draw(mouse_pos, cur_game_state, card_types)
-        price_label_city.draw(mouse_pos, cur_game_state, card_types)
+            price_label_road.draw(mouse_pos, cur_game_state, card_types)
+            price_label_town.draw(mouse_pos, cur_game_state, card_types)
+            price_label_city.draw(mouse_pos, cur_game_state, card_types)
+        if player_action_ui == "Trade":
+            general_trade_basic.draw(mouse_pos, cur_game_state, card_types)
 
 
 

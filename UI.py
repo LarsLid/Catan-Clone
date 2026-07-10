@@ -29,6 +29,7 @@ sheep_card = pygame.image.load("images/sheep_card.png").convert_alpha()
 brick_card = pygame.image.load("images/brick_card.png").convert_alpha()
 wheat_card = pygame.image.load("images/wheat_card.png").convert_alpha()
 timber_card = pygame.image.load("images/timber_card.png").convert_alpha()
+general_card = pygame.image.load("images/general_card.png").convert_alpha()
 
 font        = pygame.font.SysFont(None, 36)
 hover_font  = pygame.font.SysFont(None, 38)
@@ -95,6 +96,12 @@ gen_btn       = Button("REGENERATE", WIDTH // 1.3, HEIGHT // 1.5, 180, 50, ["Men
 toggle_btn    = Button("CENTER DESERT: ON",
                        gen_btn.rect.right + 12 + 70, gen_btn.rect.top + 20,
                        140, 40,["Menu"], btn_font=toggle_font, hover_font=toggle_hover_font)
+
+build_btn = Button("BUILD", WIDTH // 1.35, HEIGHT -HEIGHT // 1.1, 160, 50, ["PlayerTurn", "ReadyToRoll"])
+trade_btn = Button("TRADE", WIDTH // 1.35+180, HEIGHT -HEIGHT // 1.1, 160, 50, ["PlayerTurn", "ReadyToRoll"])
+
+
+
 
 pb_w      = int(startgame_btn.rect.width / 3.1)
 pb_h      = startgame_btn.rect.height
@@ -250,6 +257,33 @@ class PriceLabel:
             resource_indexes = ["ore", "sheep", "brick", "wheat", "timber"]
             cardAmount = len(self.price)
             spacing = (230 - cardAmount*30)//(cardAmount+1)
+            i=0
+            for priceCard in self.price:
+                i+=1
+                card_type_index = resource_indexes.index(priceCard)
+                card_w = 30
+                card = Card(card_types[card_type_index], 4, (self.x-self.w//2-15)+(spacing+card_w)*i, self.y, card_w, 60)
+                card.draw(hover)
+        else:
+            self.clickable = False
+
+class TradeLabel(PriceLabel):
+    def draw(self, mouse_pos, gamestate, card_types):
+        if str(gamestate) in self.visible_in_game_state:
+            self.clickable = True
+            if self.rect.collidepoint(mouse_pos):
+                rect = self.hover_rect
+                c = self.hover_color
+                hover=True
+            else:
+                c = self.color
+                rect = self.rect
+                hover=False
+
+            pygame.draw.rect(screen, c, rect, border_radius=8)
+            resource_indexes = ["ore", "sheep", "brick", "wheat", "timber", "general"]
+            cardAmount = len(self.price)
+            spacing = (230 - cardAmount*30)//(cardAmount+2)
             i=0
             for priceCard in self.price:
                 i+=1
