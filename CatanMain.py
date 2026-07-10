@@ -82,6 +82,24 @@ def findLockon (build_spaces, mouse_pos, screen):
             building_lockon = (build_spaces[i][0], build_spaces[i][1])
     return building_lockon
 
+def debugStart ():
+    global cur_game_state, player_towns, player_resources, town_spaces_main, tile_centres, number_on_tile, r
+    cur_game_state = "PlayerTurn"
+    for i in range(len(player_resources)):
+        player_resources[i]["ore"] = 5
+        player_resources[i]["sheep"] = 5
+        player_resources[i]["brick"] = 5
+        player_resources[i]["wheat"] = 5
+        player_resources[i]["timber"] = 5
+        starter_town = Town(i+1)
+        starter_town.pos = town_spaces_main[rd.randint(0,len(town_spaces_main)-1)]
+        starter_town.adjacent = findAdjacent(starter_town, tile_centres, number_on_tile, r)
+        player_towns[i].append(starter_town)
+        
+        
+        
+    
+
 #BOOTUP CODE
 
 tile_centres = BoardSetup(r)
@@ -158,6 +176,7 @@ while running:
                         cur_game_state = "FirstRound"
                         building_lockon = (0,0)
                         show_player_selection = False
+                        debugStart()
                         break
             elif throw_dice_btn.is_clicked(mouse_pos) and cur_dice_state=="Ready" and cur_game_state == "ReadyToRoll":
                 current_frame = 0
