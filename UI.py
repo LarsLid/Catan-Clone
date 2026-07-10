@@ -226,7 +226,7 @@ class PriceLabel:
         self.price = price
         self.x = x
         self.y = y
-        self.w, self.h = 230, 90
+        self.w, self.h = 230, 80
         self.rect        = pygame.Rect(int(self.x - self.w // 2), int(self.y - self.h // 2), int(self.w), int(self.h))
         self.hover_rect  = self.rect.inflate(7,7)
         self.color       = color

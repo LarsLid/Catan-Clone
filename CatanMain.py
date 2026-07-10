@@ -104,13 +104,13 @@ icon_town = Town(5)
 icon_town.pos = (WIDTH //1.1, HEIGHT//4)
 town_store_btn = Button(None,  icon_town.pos[0], icon_town.pos[1]-15, 90, 80, ["FirstRound", "ReadyToRoll", "PlayerTurn"])
 #Price
-price_label_town = PriceLabel(Costs[1],WIDTH //1.3, HEIGHT//4.1,["FirstRound", "ReadyToRoll", "PlayerTurn"])
+price_label_town = PriceLabel(Costs[1],WIDTH //1.3, icon_town.pos[1]-15,["ReadyToRoll", "PlayerTurn"])
 
 icon_road = Road(5)
 icon_road.pos = (WIDTH //1.1, HEIGHT//2.5)
 road_store_btn = Button(None, icon_road.pos[0], icon_road.pos[1]-15, 90, 80, ["FirstRound", "ReadyToRoll", "PlayerTurn"])
 #Price
-price_label_road = PriceLabel(Costs[0],WIDTH //1.3, HEIGHT//2.6,["FirstRound", "ReadyToRoll", "PlayerTurn"])
+price_label_road = PriceLabel(Costs[0],WIDTH //1.3, icon_road.pos[1]-15,["ReadyToRoll", "PlayerTurn"])
 
 isPlacingTown = False
 isPlacingRoad = False
@@ -157,12 +157,18 @@ while running:
                 if isPlacingTown:
                     isPlacingTown = False
                 elif isPlacingTown == False and isPlacingRoad == False:
+                    if cur_game_state == "PlayerTurn":
+                        if player_resources[player-1]["wheat"]<1 or player_resources[player-1]["brick"]<1 or player_resources[player-1]["sheep"]<1 or player_resources[player-1]["timber"]<1:
+                            break
                     isPlacingTown = True
                     new_town = Town(player)
             elif road_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"]:
                 if isPlacingRoad:
                     isPlacingRoad = False
                 elif isPlacingRoad == False and isPlacingTown == False:
+                    if cur_game_state == "PlayerTurn":
+                        if player_resources[player-1]["timber"]<1 or player_resources[player-1]["brick"]<1:
+                            break
                     isPlacingRoad = True
                     new_road = Road(player)
             elif isPlacingTown and building_lockon != (0,0) and canPlaceCheck(new_town, screen, player_towns, player_roads, r, "town", player, cur_game_state, placed_first_town_road):
@@ -171,12 +177,24 @@ while running:
                 isPlacingTown = False
                 new_town.adjacent = findAdjacent(new_town, tile_centres, number_on_tile, r)
                 player_towns[player-1].append(new_town)
+                #Payment
+                if cur_game_state == "PlayerTurn":
+                    player_resources[player-1]["sheep"]-=1
+                    player_resources[player-1]["brick"]-=1
+                    player_resources[player-1]["wheat"]-=1
+                    player_resources[player-1]["timber"]-=1
+
                 placed_first_town_road[player-1]+=1
             elif isPlacingRoad and building_lockon != (0,0) and canPlaceCheck(new_road, screen, player_roads, player_towns, r, "road", player, cur_game_state, placed_first_town_road):
                 new_road.pos = building_lockon
                 new_road.placed = True
                 isPlacingRoad = False
                 player_roads[player-1].append(new_road)
+                #Payment
+                if cur_game_state == "PlayerTurn":
+                    player_resources[player-1]["brick"]-=1
+                    player_resources[player-1]["timber"]-=1
+
                 placed_first_town_road[player-1]+=1
     screen.fill(BG_COLOR)
 
