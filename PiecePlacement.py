@@ -19,6 +19,7 @@ Costs=[["brick", "timber"],
        ["wheat", "sheep", "ore"]
        ]
 
+town_being_upgraded = None
 
 
 def firstRound(num_players):
@@ -55,11 +56,12 @@ def placeBuilding(team, new_building,r, mouse_pos, screen, building_lockon, plac
             new_building.pos = mouse_pos
     if placingWhat == "road":
         new_building.draw(mouse_pos, screen,r, road_centres, road_orientation, building_lockon)
-    elif placingWhat == "town":
+    elif placingWhat == "town" or placingWhat == "city":
         new_building.draw(mouse_pos, screen)
 
 
 def canPlaceCheck (new_building, screen, primary_list, secondary_list, r, placingWhat, player, cur_game_state, placed_first_town_road):
+    global town_being_upgraded
     x,y = new_building.pos
     if placingWhat == "town":
         if cur_game_state == "FirstRound":
@@ -85,6 +87,14 @@ def canPlaceCheck (new_building, screen, primary_list, secondary_list, r, placin
                     return False
         if notStranded:
             return True
+        
+    elif placingWhat == "city":
+        for town in primary_list[player-1]:
+            if math.isclose(town.pos[0], x) and math.isclose(town.pos[1], y):
+                if town.level == 1:
+                    town_being_upgraded = town
+                    return True
+        return False
     elif placingWhat == "road":
         if cur_game_state == "FirstRound":
             if placed_first_town_road[player-1] in [1,4]:
@@ -151,20 +161,87 @@ class Town:
         x, y = self.pos
         oy = y - 12
 
-        for color, w, h, roof_h, eave in [
-            ((0,0,0),    20, 18, 19, 5),
-            (self.color, 16, 14, 16, 2),
-        ]:
-            pts = [
-                (x - w,        oy + h),
-                (x + w,        oy + h),
-                (x + w,        oy),
-                (x + w + eave, oy),
-                (x,            oy - roof_h),
-                (x - w - eave, oy),
-                (x - w,        oy),
-            ]
-            pygame.draw.polygon(screen, color, pts)
+        if self.level == 1:
+            for color, w, h, roof_h, eave in [
+                ((0,0,0),    20, 18, 19, 5),
+                (self.color, 16, 14, 16, 2),
+            ]:
+                pts = [
+                    (x - w,        oy + h),
+                    (x + w,        oy + h),
+                    (x + w,        oy),
+                    (x + w + eave, oy),
+                    (x,            oy - roof_h),
+                    (x - w - eave, oy),
+                    (x - w,        oy),
+                ]
+                pygame.draw.polygon(screen, color, pts)
+        elif self.level == 2:
+            bg_pts = []
+            fg_pts = []
+
+            # tower: taller, narrower, offset left and up, drawn first so the
+            tx, ty = x - 15, oy-35
+            for color, w, h, roof_h, eave in [
+                ((0, 0, 0),  8, 40, 10, 3),
+                (self.color,  4, 36, 6, 1),
+            ]:
+                pts = [
+                    (tx - w,        ty + h),
+                    (tx + w,        ty + h),
+                    (tx + w,        ty),
+                    (tx + w + eave, ty),
+                    (tx,            ty - roof_h),
+                    (tx - w - eave, ty),
+                    (tx - w,        ty),
+                ]
+                if color== (0,0,0):
+                    bg_pts.append(pts)
+                else:
+                    fg_pts.append(pts)
+
+            # house overlaps its base
+            tx, ty = x - 18, oy - 1
+            for color, w, h, roof_h, eave in [
+                ((0, 0, 0),  12, 22, 14, 3),
+                (self.color,  9, 18, 12, 1),
+            ]:
+                pts = [
+                    (tx - w,        ty + h),
+                    (tx + w,        ty + h),
+                    (tx + w,        ty),
+                    (tx + w + eave, ty),
+                    (tx,            ty - roof_h),
+                    (tx - w - eave, ty),
+                    (tx - w,        ty),
+                ]
+                if color== (0,0,0):
+                    bg_pts.append(pts)
+                else:
+                    fg_pts.append(pts)
+
+            # house: wider than the town version
+            for color, w, h, roof_h, eave in [
+                ((0, 0, 0),  22, 18, 19, 5),
+                (self.color, 18, 14, 16, 2),
+            ]:
+                pts = [
+                    (x - w,        oy + h),
+                    (x + w,        oy + h),
+                    (x + w,        oy),
+                    (x + w + eave, oy),
+                    (x,            oy - roof_h),
+                    (x - w - eave, oy),
+                    (x - w,        oy),
+                ]
+                if color == (0,0,0):
+                    bg_pts.append(pts)
+                else:
+                    fg_pts.append(pts)
+            for pts in bg_pts:
+                pygame.draw.polygon(screen, (0,0,0), pts)
+            for pts in fg_pts:
+                pygame.draw.polygon(screen, color, pts)
         
 
 class Road:

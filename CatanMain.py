@@ -8,6 +8,7 @@ from UI import *
 from GameSetup import *
 from GameStates import *
 from PiecePlacement import *
+import PiecePlacement
 from DiceRoll import *
 
 
@@ -99,21 +100,32 @@ frame_surf = roll_spritesheet.subsurface(frame_rect)
 #Labels
 placeTownInfo = InfoText(None,cx//0.7, cy//3.5, 580, 40, 1, ["FirstRound"])
 
-#Town Icon for store
-icon_town = Town(5)
-icon_town.pos = (WIDTH //1.1, HEIGHT//4)
-town_store_btn = Button(None,  icon_town.pos[0], icon_town.pos[1]-15, 90, 80, ["FirstRound", "ReadyToRoll", "PlayerTurn"])
-#Price
-price_label_town = PriceLabel(Costs[1],WIDTH //1.3, icon_town.pos[1]-15,["ReadyToRoll", "PlayerTurn"])
-
+#Road Icon for store
 icon_road = Road(5)
-icon_road.pos = (WIDTH //1.1, HEIGHT//2.5)
+icon_road.pos = (WIDTH //1.1, HEIGHT//4)
 road_store_btn = Button(None, icon_road.pos[0], icon_road.pos[1]-15, 90, 80, ["FirstRound", "ReadyToRoll", "PlayerTurn"])
 #Price
 price_label_road = PriceLabel(Costs[0],WIDTH //1.3, icon_road.pos[1]-15,["ReadyToRoll", "PlayerTurn"])
 
+#Town Icon for store
+icon_town = Town(5)
+icon_town.pos = (WIDTH //1.1, HEIGHT//2.5)
+town_store_btn = Button(None,  icon_town.pos[0], icon_town.pos[1]-15, 90, 80, ["FirstRound", "ReadyToRoll", "PlayerTurn"])
+#Price
+price_label_town = PriceLabel(Costs[1],WIDTH //1.3, icon_town.pos[1]-15,["ReadyToRoll", "PlayerTurn"])
+
+#Town Icon for store
+icon_city = Town(5)
+icon_city.level = 2
+icon_city.pos = (WIDTH //1.1, HEIGHT//1.8)
+city_store_btn = Button(None,  icon_town.pos[0], icon_city.pos[1]-15, 90, 80, ["FirstRound","ReadyToRoll", "PlayerTurn"])
+#Price
+price_label_city = PriceLabel(Costs[2],WIDTH //1.3, icon_city.pos[1]-15,["ReadyToRoll", "PlayerTurn"])
+
+
 isPlacingTown = False
 isPlacingRoad = False
+isPlacingCity = False
 running = True
 
 
@@ -156,7 +168,7 @@ while running:
             elif town_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"]:
                 if isPlacingTown:
                     isPlacingTown = False
-                elif isPlacingTown == False and isPlacingRoad == False:
+                elif isPlacingTown == False and isPlacingRoad == False and isPlacingCity == False:
                     if cur_game_state == "PlayerTurn":
                         if player_resources[player-1]["wheat"]<1 or player_resources[player-1]["brick"]<1 or player_resources[player-1]["sheep"]<1 or player_resources[player-1]["timber"]<1:
                             break
@@ -165,12 +177,22 @@ while running:
             elif road_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"]:
                 if isPlacingRoad:
                     isPlacingRoad = False
-                elif isPlacingRoad == False and isPlacingTown == False:
+                elif isPlacingRoad == False and isPlacingTown == False and isPlacingCity == False:
                     if cur_game_state == "PlayerTurn":
                         if player_resources[player-1]["timber"]<1 or player_resources[player-1]["brick"]<1:
                             break
                     isPlacingRoad = True
                     new_road = Road(player)
+            elif city_store_btn.is_clicked(mouse_pos) and cur_game_state in ["PlayerTurn"]:
+                if isPlacingCity:
+                    isPlacingCity = False
+                elif isPlacingTown == False and isPlacingRoad == False and isPlacingCity == False:
+                    if cur_game_state == "PlayerTurn":
+                        if player_resources[player-1]["wheat"]<2 or player_resources[player-1]["ore"]<3 :
+                            break
+                    isPlacingCity = True
+                    new_town = Town(player)
+                    new_town.level = 2
             elif isPlacingTown and building_lockon != (0,0) and canPlaceCheck(new_town, screen, player_towns, player_roads, r, "town", player, cur_game_state, placed_first_town_road):
                 new_town.pos = building_lockon
                 new_town.placed = True
@@ -196,6 +218,18 @@ while running:
                     player_resources[player-1]["timber"]-=1
 
                 placed_first_town_road[player-1]+=1
+
+            elif isPlacingCity and building_lockon != (0,0) and canPlaceCheck(new_town, screen, player_towns, player_roads, r, "city", player, cur_game_state, placed_first_town_road):
+                new_town.pos = building_lockon
+                new_town.placed = True
+                isPlacingCity = False
+
+                if PiecePlacement.town_being_upgraded is not None:
+                    PiecePlacement.town_being_upgraded.level = 2
+                #Payment
+                if cur_game_state == "PlayerTurn":
+                    player_resources[player-1]["wheat"]-=2
+                    player_resources[player-1]["ore"]-=3
     screen.fill(BG_COLOR)
 
     endturn_btn.draw(mouse_pos, cur_game_state)
@@ -243,8 +277,14 @@ while running:
 
 
     placeTiles(tile_centres)
+    player_towns_pos = []
+    if player_towns is not None:
+        for town in player_towns[player-1]:
+            player_towns_pos.append(town.pos)
     if isPlacingTown:
         building_lockon = findLockon(town_spaces_main, mouse_pos, screen)
+    elif isPlacingCity:
+        building_lockon = findLockon(player_towns_pos, mouse_pos, screen)
     elif isPlacingRoad:
         building_lockon = findLockon(road_centres, mouse_pos, screen)
     if cur_game_state in ["FirstRound","ReadyToRoll", "PlayerTurn"]:
@@ -265,11 +305,14 @@ while running:
 
 
         #Store
-        town_store_btn.draw_icon(mouse_pos, cur_game_state, icon_town,r)
         road_store_btn.draw_icon(mouse_pos, cur_game_state, icon_road,r)
+        town_store_btn.draw_icon(mouse_pos, cur_game_state, icon_town,r)
+        city_store_btn.draw_icon(mouse_pos, cur_game_state, icon_city,r)
 
-        price_label_town.draw(mouse_pos, cur_game_state, card_types)
         price_label_road.draw(mouse_pos, cur_game_state, card_types)
+        price_label_town.draw(mouse_pos, cur_game_state, card_types)
+        price_label_city.draw(mouse_pos, cur_game_state, card_types)
+
 
 
     #Draw player Towns
@@ -287,6 +330,8 @@ while running:
         placeBuilding(player, new_town,r, mouse_pos, screen, building_lockon, "town")
     elif isPlacingRoad:
         placeBuilding(player, new_road,r, mouse_pos, screen, building_lockon, "road", road_centres, road_orientation, )
+    elif isPlacingCity:
+        placeBuilding(player, new_town, r, mouse_pos, screen, building_lockon, "city")
 
     #Debug
     game_state_lbl = InfoText(f"{cur_game_state}", 80, 30, 150, 50, player, visible_in_game_state=["Menu", "FirstRound", "ReadyToRoll", "PlayerTurn", "Trade(?)", "Victory"])

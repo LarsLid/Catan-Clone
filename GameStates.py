@@ -56,15 +56,15 @@ def collectCards(player_towns, player_resources, number_on_tile, roll, mapseed):
             for tile in town.adjacent:
                 if roll == number_on_tile[tile]:
                     if mapseed[tile] == 0:
-                        player_resources[i]["ore"]+=1
+                        player_resources[i]["ore"]+=town.level
                     elif mapseed[tile] == 1:
-                        player_resources[i]["sheep"]+=1
+                        player_resources[i]["sheep"]+=town.level
                     elif mapseed[tile] == 2:
-                        player_resources[i]["brick"]+=1
+                        player_resources[i]["brick"]+=town.level
                     elif mapseed[tile] == 3:
-                        player_resources[i]["wheat"]+=1
+                        player_resources[i]["wheat"]+=town.level
                     elif mapseed[tile] == 4:
-                        player_resources[i]["timber"]+=1
+                        player_resources[i]["timber"]+=town.level
                     else:
                         pass
                     print(f"Tile {tile} has number {roll} and can be collected")

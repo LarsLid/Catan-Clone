@@ -248,10 +248,14 @@ class PriceLabel:
 
             pygame.draw.rect(screen, c, rect, border_radius=8)
             resource_indexes = ["ore", "sheep", "brick", "wheat", "timber"]
-            start_x = self.x+30-30*len(self.price)
+            cardAmount = len(self.price)
+            spacing = (230 - cardAmount*30)//(cardAmount+1)
+            i=0
             for priceCard in self.price:
+                i+=1
                 card_type_index = resource_indexes.index(priceCard)
-                card = Card(card_types[card_type_index], 4, start_x+self.price.index(priceCard)*60, self.y, 30, 60)
+                card_w = 30
+                card = Card(card_types[card_type_index], 4, (self.x-self.w//2-15)+(spacing+card_w)*i, self.y, card_w, 60)
                 card.draw(hover)
         else:
             self.clickable = False
