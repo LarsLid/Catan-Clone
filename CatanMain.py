@@ -330,7 +330,7 @@ while running:
         screen.blit(frame_surf, (WIDTH//1.6, HEIGHT//1.2)) 
         #CardHolder UI
         card_area_rect = pygame.Rect(20, HEIGHT//1.25, WIDTH//1.7, 130)
-        fg_rect = pygame.Rect(40, HEIGHT//1.25, WIDTH//1.8, 110)
+        fg_rect = pygame.Rect(30, HEIGHT//1.25, WIDTH//1.75, 120)
         pygame.draw.rect(screen, (102, 62, 17), card_area_rect)
         pygame.draw.rect(screen, (186, 118, 41), fg_rect)
 
@@ -382,6 +382,18 @@ while running:
         for i in road_centres:
         pygame.draw.circle(screen, (255,0,0), i, 10)
     """
+    #Draw ports
+    port_status = []
+    ring_order = getRingOrder(town_spaces_main, tile_centres, r)
+    ring_spaces = [town_spaces_main[i] for i in ring_order]
+    for i in range(len(ring_spaces)):
+        port = i % 7 
+        port_status.append(port in (0, 1, 3, 4))
+
+    for pos in ring_spaces:
+        color = (255,0,0) if port_status[ring_spaces.index(pos)] else (0,0,0)
+        pygame.draw.circle(screen, color, pos, 8)
+
 
     
     pygame.display.flip()

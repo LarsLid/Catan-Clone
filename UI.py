@@ -210,7 +210,7 @@ def drawCards(player_resources, player, card_types, mouse_pos):
             pile = []
 
             for i in range(amountShown-1, -1, -1):
-                card = Card(card_types[card_type_index], player, 100+n*spacing+offset[i][0], HEIGHT//1.18-offset[i][0])
+                card = Card(card_types[card_type_index], player, 100+n*spacing+offset[i][0], HEIGHT//1.15-offset[i][0])
                 if card.rect.collidepoint(mouse_pos):
                     hover = True
                 else:

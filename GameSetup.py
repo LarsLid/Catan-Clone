@@ -4,7 +4,7 @@ import math
 import numpy as np
 import random as rd
 
-r=65 #Hex radius
+r=55 #Hex radius (FUNKET MED 65)
 bg_tile_pts = [(-math.sqrt(3)/2*r, -r/2), (0,-r), (math.sqrt(3)/2*r, -r/2),
                (math.sqrt(3)/2*r, r/2), (0,r), (-math.sqrt(3)/2*r, r/2)]
 
@@ -13,7 +13,7 @@ def BoardSetup(r):
     tile_centres = []
     s= math.sqrt(3)/2*r
     h= r/2
-    board_height = 80
+    board_height = 100
     board_padding_width = 120
     oy=board_height
     for i in range(3):
@@ -59,7 +59,7 @@ def generateTownSpaces(tile_centres, r):
         counter_sign+=1
         #Increase or decrease hexes in row:
         hexes_in_row+= -np.sign(counter_sign)
-        oy += r + r/4 +15
+        oy += r + r/4 +(r//4.1)
         ox += math.sqrt(3)/2*r*np.sign(counter_sign)
         if counter_sign == 0: 
             flipper*=-1
@@ -99,13 +99,55 @@ def generateRoadSpaces(tile_centres,screen, r):
         counter_sign+=1
         #Increase or decrease hexes in row:
         hexes_in_row+= -np.sign(counter_sign)
-        y1 += r + r/4 +16
+        y1 += r + r/4 +(r//4.1)
         x1 += s*np.sign(counter_sign)
         if counter_sign == 0:
             flipper*=-1
             odd_after_middle = 1
     return road_centres, road_orientation
-        
+
+def generatePorts (town_spaces, r, screen):
+    outer_town_spaces = []
+    for i in range (9):
+
+        outer_town_spaces.append(town_spaces[i])#7,8, 14,15, 16, 17, 25, 26, 27,28, 36, 37, 38 ,39, 45, 46, 47-53
+    for i in range(14,18):
+        outer_town_spaces.append(town_spaces[i])
+    for i in range(25,29):
+        outer_town_spaces.append(town_spaces[i])
+    for i in range(36,40):
+        outer_town_spaces.append(town_spaces[i])
+    for i in range(45,54):
+        outer_town_spaces.append(town_spaces[i])
+
+    port_status = []
+    for i in range(len(outer_town_spaces)):
+            port = i % 7
+            port_status.append(port in (0, 1, 3, 4))
+
+    for pos in outer_town_spaces:
+        color = (255,0,0) if port_status[outer_town_spaces.index(pos)]==True else (0,0,0)
+        pygame.draw.circle(screen, color, pos, 8)
+
+def getRingOrder(town_spaces, tile_centres, r, tol=5):
+    boundary_idx = []
+    for i, p in enumerate(town_spaces):
+        touch_count = 0
+        for c in tile_centres:
+            d = math.sqrt((p[0]-c[0])**2 + (p[1]-c[1])**2)
+            if abs(d - r) <= tol:
+                touch_count += 1
+        if touch_count < 3:
+            boundary_idx.append(i)
+
+    cx = sum(c[0] for c in tile_centres) / len(tile_centres)
+    cy = sum(c[1] for c in tile_centres) / len(tile_centres)
+
+    boundary_idx.sort(key=lambda i: math.atan2(
+        town_spaces[i][1] - cy, town_spaces[i][0] - cx
+    ))
+
+    return boundary_idx
 
 mapseed = [rd.randint(0,4) for i in range(19)] #Not MapGen, just placeholder list
 number_on_tile = [1 for i in range(19)] # Placeholder number placement
