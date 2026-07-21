@@ -4,6 +4,7 @@ import math
 import numpy as np
 import random as rd
 pygame.init()
+import UI
 from UI import *
 from GameSetup import *
 from GameStates import *
@@ -83,7 +84,7 @@ def findLockon (build_spaces, mouse_pos, screen):
     return building_lockon
 
 def debugStart ():
-    global cur_game_state, player_towns, player_resources, town_spaces_main, tile_centres, number_on_tile, r
+    global cur_game_state, player_towns, player_resources, town_spaces_main, tile_centres, number_on_tile, r, test
     cur_game_state = "PlayerTurn"
     for i in range(len(player_resources)):
         player_resources[i]["ore"] = 5
@@ -95,6 +96,9 @@ def debugStart ():
         starter_town.pos = town_spaces_main[rd.randint(0,len(town_spaces_main)-1)]
         starter_town.adjacent = findAdjacent(starter_town, tile_centres, number_on_tile, r)
         player_towns[i].append(starter_town)
+
+
+
         
         
         
@@ -106,7 +110,12 @@ tile_centres = BoardSetup(r)
 road_centres, road_orientation = generateRoadSpaces(tile_centres, screen, r)
 town_spaces_main = generateTownSpaces(tile_centres, r)
 mapGen(mapseed, number_on_tile, CENTER_DESERT)
+ring_order, port_status, port_pairs = getRingOrder(town_spaces_main, tile_centres, r)
+ring_spaces = [town_spaces_main[i] for i in ring_order]
+ports = generatePorts(ring_spaces, port_status, port_pairs, tile_centres, r)
+print(port.orientation for port in ports)
 snakedraft = 1
+spaces_in_pairs = getOrientation(ring_spaces, port_pairs, tile_centres, r)
 
 player_towns = None
 player_roads = None
@@ -162,6 +171,10 @@ while running:
             running = False
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             running = False
+        if event.type == pygame.VIDEORESIZE:
+            width, height = event.w, event.h
+            screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
+            UI.screen = screen
         if event.type == pygame.MOUSEBUTTONDOWN:
             if endturn_btn.is_clicked(mouse_pos):
                 player, cur_game_state, cur_dice_state, placed_first_town_road, snakedraft = endTurn(player, playerCount, cur_game_state, placed_first_town_road, snakedraft)
@@ -315,6 +328,9 @@ while running:
 
 
     placeTiles(tile_centres)
+    for port in ports:
+        port.draw(screen)
+
     player_towns_pos = []
     if player_towns is not None:
         for town in player_towns[player-1]:
@@ -381,19 +397,26 @@ while running:
     """
         for i in road_centres:
         pygame.draw.circle(screen, (255,0,0), i, 10)
-    """
+   
     #Draw ports
-    port_status = []
-    ring_order = getRingOrder(town_spaces_main, tile_centres, r)
-    ring_spaces = [town_spaces_main[i] for i in ring_order]
-    for i in range(len(ring_spaces)):
-        port = i % 7 
-        port_status.append(port in (0, 1, 3, 4))
+    colors = [
+    (230, 25, 75),   # red
+    (60, 180, 75),   # green
+    (255, 225, 25),  # yellow
+    (0, 130, 200),   # blue
+    (245, 130, 48),  # orange
+    (145, 30, 180),  # purple
+    (70, 240, 240),  # cyan
+    (240, 50, 230),  # magenta
+    (170, 110, 40),  # brown
+    (210, 245, 60),  # lime
+    ]
 
-    for pos in ring_spaces:
-        color = (255,0,0) if port_status[ring_spaces.index(pos)] else (0,0,0)
-        pygame.draw.circle(screen, color, pos, 8)
-
+    for pairs in spaces_in_pairs:
+        color = colors[spaces_in_pairs.index(pairs)]
+        for pos in pairs:
+            pygame.draw.circle(screen, color, pos, 8)
+    """
 
     
     pygame.display.flip()

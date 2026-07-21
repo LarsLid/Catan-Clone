@@ -6,7 +6,7 @@ import random as rd
 
 WIDTH, HEIGHT = 1200, 730
 cx, cy = WIDTH//2, HEIGHT//2
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 
 BG_COLOR  = (30, 80, 160)
 BTN_COLOR = (220, 180, 80)

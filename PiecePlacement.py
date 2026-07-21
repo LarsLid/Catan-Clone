@@ -18,14 +18,7 @@ Costs=[["brick", "timber"],
        ["wheat", "wheat", "ore", "ore", "ore"],
        ["wheat", "sheep", "ore"]
        ]
-trade_costs = [["general", "general", "general", "general"],
-       ["general", "general", "general"],
-       ["ore", "ore"],
-       ["sheep", "sheep"],
-       ["brick", "brick"],
-       ["wheat", "wheat"],
-       ["timber", "timber"]
-       ]
+
 
 town_being_upgraded = None
 
@@ -297,6 +290,4 @@ class Road:
                  
                   
         
-        #GJØR TEGNING AVHENGIG AV ORIENTATION
-
      

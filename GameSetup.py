@@ -3,6 +3,7 @@ import sys
 import math
 import numpy as np
 import random as rd
+from collections import defaultdict
 
 r=55 #Hex radius (FUNKET MED 65)
 bg_tile_pts = [(-math.sqrt(3)/2*r, -r/2), (0,-r), (math.sqrt(3)/2*r, -r/2),
@@ -106,48 +107,10 @@ def generateRoadSpaces(tile_centres,screen, r):
             odd_after_middle = 1
     return road_centres, road_orientation
 
-def generatePorts (town_spaces, r, screen):
-    outer_town_spaces = []
-    for i in range (9):
 
-        outer_town_spaces.append(town_spaces[i])#7,8, 14,15, 16, 17, 25, 26, 27,28, 36, 37, 38 ,39, 45, 46, 47-53
-    for i in range(14,18):
-        outer_town_spaces.append(town_spaces[i])
-    for i in range(25,29):
-        outer_town_spaces.append(town_spaces[i])
-    for i in range(36,40):
-        outer_town_spaces.append(town_spaces[i])
-    for i in range(45,54):
-        outer_town_spaces.append(town_spaces[i])
 
-    port_status = []
-    for i in range(len(outer_town_spaces)):
-            port = i % 7
-            port_status.append(port in (0, 1, 3, 4))
 
-    for pos in outer_town_spaces:
-        color = (255,0,0) if port_status[outer_town_spaces.index(pos)]==True else (0,0,0)
-        pygame.draw.circle(screen, color, pos, 8)
 
-def getRingOrder(town_spaces, tile_centres, r, tol=5):
-    boundary_idx = []
-    for i, p in enumerate(town_spaces):
-        touch_count = 0
-        for c in tile_centres:
-            d = math.sqrt((p[0]-c[0])**2 + (p[1]-c[1])**2)
-            if abs(d - r) <= tol:
-                touch_count += 1
-        if touch_count < 3:
-            boundary_idx.append(i)
-
-    cx = sum(c[0] for c in tile_centres) / len(tile_centres)
-    cy = sum(c[1] for c in tile_centres) / len(tile_centres)
-
-    boundary_idx.sort(key=lambda i: math.atan2(
-        town_spaces[i][1] - cy, town_spaces[i][0] - cx
-    ))
-
-    return boundary_idx
 
 mapseed = [rd.randint(0,4) for i in range(19)] #Not MapGen, just placeholder list
 number_on_tile = [1 for i in range(19)] # Placeholder number placement
@@ -187,3 +150,168 @@ def mapGen(mapseed, number_on_tile, cd):
             number_index =rd.randint(0,18-j)
             number_on_tile[i]=numbers[number_index]
             numbers.pop(number_index)
+
+trade_costs = [["general", "general", "general", "general"],
+       ["general", "general", "general"],
+       ["ore", "ore"],
+       ["sheep", "sheep"],
+       ["brick", "brick"],
+       ["wheat", "wheat"],
+       ["timber", "timber"]
+       ]
+
+def getRingOrder(town_spaces, tile_centres, r): #For ports
+    tol = r * 0.1
+    boundary_idx = []
+    port_pairs = []
+
+    for i, p in enumerate(town_spaces):
+        touch_count = 0
+        for c in tile_centres:
+            d = math.sqrt((p[0]-c[0])**2 + (p[1]-c[1])**2)
+            if abs(d - r) <= tol:
+                touch_count += 1
+        if touch_count < 3:
+            boundary_idx.append(i) #The Outer ring town spaces can at most have 2 adjacent tile centres
+
+    cx = sum(c[0] for c in tile_centres) / len(tile_centres)
+    cy = sum(c[1] for c in tile_centres) / len(tile_centres)
+
+    boundary_idx.sort(key=lambda i: math.atan2(
+        town_spaces[i][1] - cy, town_spaces[i][0] - cx
+    ))
+    pair = 0
+    port_status = []
+    for i in range(len(boundary_idx)):
+        if i % 10 in (0,1,3,4,6,7):
+            port_status.append(True)
+            port_pairs.append(pair)
+        else:
+            port_status.append(False)
+            port_pairs.append(None)
+            pair+=1
+    
+
+
+
+    #port_status = [i % 10 in (0, 1, 3, 4, 6, 7) for i in range(len(boundary_idx))] #Decides whether an outer ring space is a port
+
+    return boundary_idx, port_status, port_pairs
+
+
+def getOrientation(ring_spaces, port_pairs, tile_centres, r):
+    tol = r // 4.1  # same tolerance pattern as getRingOrder
+
+    pairs = defaultdict(list)
+    for pair_number, space in zip(port_pairs, ring_spaces):
+        if pair_number is not None:          # drop the non-port vertices
+            pairs[pair_number].append(space)
+    result = list(pairs.values())
+
+    orientations = ["NE", "E", "SE", "SW", "W", "NW"]
+    degs = [30, 90, 150, 210, 270, 330]
+
+    port_orientations = []
+    tile_debug_list = []
+    for p1, p2 in result:
+        # the one tile both pair positions are within reach of
+        tile = next(c for c in tile_centres
+                    if abs(math.dist(p1, c) - r) <= tol and abs(math.dist(p2, c) - r) <= tol)
+
+        mx, my = (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2 #Line midpoint
+        angle = math.degrees(math.atan2(my - tile[1], mx - tile[0])) % 360 + 90
+
+        best_deg = min(degs, key=lambda d: min(abs(d - angle), 360 - abs(d - angle)))
+        orientation = orientations[degs.index(best_deg)]
+        port_orientations.append(orientation)
+        port_orientations.append(orientation)
+        tile_debug_list.append(tile_centres.index(tile))
+    print(tile_debug_list)
+
+    return result, port_orientations
+
+
+
+def generatePorts(ring_spaces, port_status, port_pairs, tile_centres,r):
+    ports = []
+    result, port_orientations = getOrientation(ring_spaces, port_pairs,tile_centres, r)
+    i=0
+    for pos in ring_spaces:
+        if port_status[ring_spaces.index(pos)]:
+            print(port_orientations[i])
+            ports.append(Port(port_orientations[i], pos, ["Wheat","Wheat","Wheat"]))
+            i+=1
+    return ports
+
+
+def offsetPolygon(pts, d): #Function made by claude, could probably be simplified
+    #Moves every edge outward by d, then re-derives each corner as the
+    #intersection of its two adjacent offset edges (a mitered outline)
+    n = len(pts)
+    normals = []
+    for i in range(n):
+        x1, y1 = pts[i]
+        x2, y2 = pts[(i + 1) % n]
+        dx, dy = x2 - x1, y2 - y1
+        length = math.hypot(dx, dy)
+        normals.append((dy / length, -dx / length))
+
+    def lineIntersect(p1, d1, p2, d2):
+        x1, y1 = p1
+        dx1, dy1 = d1
+        x2, y2 = p2
+        dx2, dy2 = d2
+        denom = dx1 * dy2 - dy1 * dx2
+        t = ((x2 - x1) * dy2 - (y2 - y1) * dx2) / denom
+        return (x1 + t * dx1, y1 + t * dy1)
+
+    offset_pts = []
+    for i in range(n):
+        prev_pt, curr_pt, next_pt = pts[(i - 1) % n], pts[i], pts[(i + 1) % n]
+        prev_normal, curr_normal = normals[(i - 1) % n], normals[i]
+
+        prev_edge_start = (prev_pt[0] + d * prev_normal[0], prev_pt[1] + d * prev_normal[1])
+        curr_edge_start = (curr_pt[0] + d * curr_normal[0], curr_pt[1] + d * curr_normal[1])
+        prev_edge_dir = (curr_pt[0] - prev_pt[0], curr_pt[1] - prev_pt[1])
+        curr_edge_dir = (next_pt[0] - curr_pt[0], next_pt[1] - curr_pt[1])
+
+        offset_pts.append(lineIntersect(prev_edge_start, prev_edge_dir, curr_edge_start, curr_edge_dir))
+    return offset_pts
+
+
+class Port():
+    def __init__(self, orientation, pos, trade):
+        start_deg = 330 #SW 
+        orientations = ["NE", "E", "SE", "SW", "W", "NW"]
+        degs = [30, 90, 150, 210, 270, 330]
+        self.orientation = orientation
+        self.deg = degs[orientations.index(self.orientation)]
+        self.pos = pos
+        self.color = (173, 102, 14)
+        self.pts = [(3,0), (17,0), (20,50), (0, 50)]
+        self.trade = trade
+
+    def draw(self, screen): #Made with claude
+        #Black background: same shape as the port, offset outward by a uniform distance
+        border = 4
+        outline_pts = offsetPolygon(self.pts, border)
+
+        pad = 2
+        min_x = min(x for x, y in outline_pts) - pad
+        min_y = min(y for x, y in outline_pts) - pad
+        max_x = max(x for x, y in outline_pts) + pad
+        max_y = max(y for x, y in outline_pts) + pad
+        w, h = int(max_x - min_x), int(max_y - min_y)
+
+        shifted_pts = [(x - min_x, y - min_y) for x, y in self.pts]
+        shifted_outline_pts = [(x - min_x, y - min_y) for x, y in outline_pts]
+
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        pygame.draw.polygon(surf, (0, 0, 0), shifted_outline_pts)
+        pygame.draw.polygon(surf, self.color, shifted_pts)
+
+        rotated_surf = pygame.transform.rotate(surf, self.deg)
+        rotozoomed_surf = pygame.transform.rotozoom(surf, -self.deg, 0.8)
+        rect = rotozoomed_surf.get_rect(center=self.pos)
+        screen.blit(rotozoomed_surf, rect)
+
