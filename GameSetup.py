@@ -236,11 +236,13 @@ def generatePorts(ring_spaces, port_status, port_pairs, tile_centres,r):
     ports = []
     result, port_orientations = getOrientation(ring_spaces, port_pairs,tile_centres, r)
     i=0
+    tilt = 15
     for pos in ring_spaces:
         if port_status[ring_spaces.index(pos)]:
             print(port_orientations[i])
-            ports.append(Port(port_orientations[i], pos, ["Wheat","Wheat","Wheat"]))
+            ports.append(Port(port_orientations[i], pos, ["Wheat","Wheat","Wheat"], tilt))
             i+=1
+            tilt *= -1
     return ports
 
 
@@ -280,21 +282,26 @@ def offsetPolygon(pts, d): #Function made by claude, could probably be simplifie
 
 
 class Port():
-    def __init__(self, orientation, pos, trade):
+    def __init__(self, orientation, pos, trade, tilt):
         start_deg = 330 #SW 
         orientations = ["NE", "E", "SE", "SW", "W", "NW"]
         degs = [30, 90, 150, 210, 270, 330]
         self.orientation = orientation
         self.deg = degs[orientations.index(self.orientation)]
+        self.tilt = tilt
         self.pos = pos
         self.color = (173, 102, 14)
-        self.pts = [(3,0), (17,0), (20,50), (0, 50)]
+        self.pts = [(2,0), (14,0), (16,50), (0, 50)]
         self.trade = trade
 
-    def draw(self, screen): #Made with claude
+    def draw(self, screen,r): #Made with claude
         #Black background: same shape as the port, offset outward by a uniform distance
         border = 4
         outline_pts = offsetPolygon(self.pts, border)
+
+        offset_r = r*0.25
+        offset_x = offset_r*math.sin(math.radians(self.deg))
+        offset_y = -offset_r*math.cos(math.radians(self.deg))
 
         pad = 2
         min_x = min(x for x, y in outline_pts) - pad
@@ -311,7 +318,8 @@ class Port():
         pygame.draw.polygon(surf, self.color, shifted_pts)
 
         rotated_surf = pygame.transform.rotate(surf, self.deg)
-        rotozoomed_surf = pygame.transform.rotozoom(surf, -self.deg, 0.8)
-        rect = rotozoomed_surf.get_rect(center=self.pos)
+        rotozoomed_surf = pygame.transform.rotozoom(surf, -(self.deg+self.tilt), 0.8)
+        
+        rect = rotozoomed_surf.get_rect(center=(self.pos[0] +offset_x, self.pos[1] +offset_y))
         screen.blit(rotozoomed_surf, rect)
 

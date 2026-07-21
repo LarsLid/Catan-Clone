@@ -327,10 +327,11 @@ while running:
 
 
 
-    placeTiles(tile_centres)
+   
     for port in ports:
-        port.draw(screen)
-
+        port.draw(screen, r)
+    placeTiles(tile_centres)
+    
     player_towns_pos = []
     if player_towns is not None:
         for town in player_towns[player-1]:
