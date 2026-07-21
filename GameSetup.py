@@ -5,7 +5,7 @@ import numpy as np
 import random as rd
 from collections import defaultdict
 
-r=55 #Hex radius (FUNKET MED 65)
+r=50 #Hex radius (FUNKET MED 65)
 bg_tile_pts = [(-math.sqrt(3)/2*r, -r/2), (0,-r), (math.sqrt(3)/2*r, -r/2),
                (math.sqrt(3)/2*r, r/2), (0,r), (-math.sqrt(3)/2*r, r/2)]
 
@@ -115,6 +115,7 @@ def generateRoadSpaces(tile_centres,screen, r):
 mapseed = [rd.randint(0,4) for i in range(19)] #Not MapGen, just placeholder list
 number_on_tile = [1 for i in range(19)] # Placeholder number placement
 CENTER_DESERT = True #cd
+
 def mapGen(mapseed, number_on_tile, cd):
     allowed_tiles = [0,0,0, 1,1,1,1, 2,2,2, 3,3,3,3, 4,4,4,4, 5] #weighted odds
     numbers = [2,3,3,4,4,5,5,6,6,7,8,8,9,9,10,10,11,11,12] #Resource numbers
@@ -160,6 +161,7 @@ trade_costs = [["general", "general", "general", "general"],
        ["timber", "timber"]
        ]
 
+ALTERNATING_PORTS = True
 def getRingOrder(town_spaces, tile_centres, r): #For ports
     tol = r * 0.1
     boundary_idx = []
@@ -244,6 +246,46 @@ def generatePorts(ring_spaces, port_status, port_pairs, tile_centres,r):
             i+=1
             tilt *= -1
     return ports
+
+def generateTrades(alternatingPorts):
+    trade_node_pool = [
+        ["ore", "ore"],
+        ["general", "general", "general"],
+        ["sheep", "sheep"],
+        ["general", "general", "general"],
+        ["brick", "brick"],
+        ["general", "general", "general"],
+        ["wheat", "wheat"],
+        ["general", "general", "general"],
+        ["timber", "timber"]
+    ]
+
+    tradeNodes = []
+    if alternatingPorts:
+        nodeIndex = rd.randint(0,8)
+        for i in range(9):
+            tradeNodes.append(trade_node_pool[nodeIndex])
+            if nodeIndex == 8:
+                nodeIndex=0
+            else:
+                nodeIndex+=1
+    else:
+        for i in range(9):
+            randomIndex = rd.randint(0,(len(trade_node_pool)-1))
+            tradeNodes.append(trade_node_pool[randomIndex])
+            trade_node_pool.pop(randomIndex)
+
+    nodeIcons = []
+    for node in tradeNodes:
+        nodeIcons.append(node[0])
+
+    
+    
+            
+            
+    return tradeNodes, nodeIcons
+
+
 
 
 def offsetPolygon(pts, d): #Function made by claude, could probably be simplified

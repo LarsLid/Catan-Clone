@@ -16,8 +16,10 @@ from DiceRoll import *
 pygame.display.set_caption("Catan")
 
 player = 0
+resource_types = ["ore", "sheep", "brick", "wheat", "timber"] #Useful for indexing
 tile_types = [ore_tile, sheep_tile, brick_tile, wheat_tile, timber_tile, desert_tile]
 card_types = [ore_card, sheep_card, brick_card, wheat_card, timber_card, general_card]
+icon_types = [ore_icon, sheep_icon, brick_icon, wheat_icon, timber_icon]
 
 
 #Numbers for resource yield
@@ -113,9 +115,8 @@ mapGen(mapseed, number_on_tile, CENTER_DESERT)
 ring_order, port_status, port_pairs = getRingOrder(town_spaces_main, tile_centres, r)
 ring_spaces = [town_spaces_main[i] for i in ring_order]
 ports = generatePorts(ring_spaces, port_status, port_pairs, tile_centres, r)
-print(port.orientation for port in ports)
+tradeNodes, nodeIcons = generateTrades(ALTERNATING_PORTS)
 snakedraft = 1
-spaces_in_pairs = getOrientation(ring_spaces, port_pairs, tile_centres, r)
 
 player_towns = None
 player_roads = None
@@ -182,8 +183,11 @@ while running:
                 player_action_ui = "Build"
             elif gen_btn.is_clicked(mouse_pos):
                 mapGen(mapseed, number_on_tile, CENTER_DESERT)
-            elif toggle_btn.is_clicked(mouse_pos):
+                tradeNodes, nodeIcons = generateTrades(ALTERNATING_PORTS)
+            elif toggle_cd_btn.is_clicked(mouse_pos):
                 CENTER_DESERT = not CENTER_DESERT
+            elif toggle_ports_btn.is_clicked(mouse_pos):
+                ALTERNATING_PORTS = not ALTERNATING_PORTS
             elif not show_player_selection and startgame_btn.is_clicked(mouse_pos):
                 show_player_selection = True
             elif show_player_selection:
@@ -278,10 +282,17 @@ while running:
 
     endturn_btn.draw(mouse_pos, cur_game_state)
     gen_btn.draw(mouse_pos, cur_game_state)
-    toggle_btn.label = f"CENTER DESERT: {'ON' if CENTER_DESERT else 'OFF'}"
-    toggle_btn.color = (120, 220, 120) if CENTER_DESERT else BTN_COLOR
-    toggle_btn.hover_color = (120,225, 120) if CENTER_DESERT else BTN_HOVER
-    toggle_btn.draw(mouse_pos, cur_game_state)
+
+    toggle_cd_btn.label = f"CENTER DESERT: {'ON' if CENTER_DESERT else 'OFF'}"
+    toggle_cd_btn.color = (120, 220, 120) if CENTER_DESERT else BTN_COLOR
+    toggle_cd_btn.hover_color = (120,225, 120) if CENTER_DESERT else BTN_HOVER
+    toggle_cd_btn.draw(mouse_pos, cur_game_state)
+
+    toggle_ports_btn.label = f"ALTERNATING PORTST: {'ON' if ALTERNATING_PORTS else 'OFF'}"
+    toggle_ports_btn.color = (120, 220, 120) if ALTERNATING_PORTS else BTN_COLOR
+    toggle_ports_btn.hover_color = (120,225, 120) if ALTERNATING_PORTS else BTN_HOVER
+    toggle_ports_btn.draw(mouse_pos, cur_game_state)
+
     build_btn.color = (120, 220, 120) if player_action_ui=="Build" else BTN_COLOR
     build_btn.hover_color = (120,225, 120) if player_action_ui=="Build" else BTN_HOVER
     build_btn.draw(mouse_pos, cur_game_state)
@@ -323,15 +334,29 @@ while running:
 
     
     
-
-
-
-
-   
     for port in ports:
         port.draw(screen, r)
     placeTiles(tile_centres)
-    
+
+    #TradeNode Drawer
+    for i in range(0, len(ports), 2):
+        j = int(i//2)
+        amount=len(tradeNodes[j])
+        resource_icon=nodeIcons[j]
+        if resource_icon=="general":
+            img=None
+        else:
+            img=icon_types[resource_types.index(resource_icon)]
+        adjuster = -40 if ports[i].pos[1] < 7*r and ports[i].deg >-110 and ports[i].deg <110 and img!=None else 0
+        offset = (r*math.sin(math.radians(ports[i].deg)), -r*math.cos(math.radians(ports[i].deg)))
+        infopos = ((ports[i].pos[0]+ports[i+1].pos[0])//2+offset[0], (ports[i].pos[1]+ports[i+1].pos[1])//2+offset[1]+adjuster) #Attempts to place the trade info between the 2 ports
+        
+        node = InfoText(f"{amount} : 1", infopos[0], infopos[1], 50, 30, 5, ["Menu", "FirstRound","ReadyToRoll", "PlayerTurn"])
+        node.draw(mouse_pos, cur_game_state, img)
+
+
+
+
     player_towns_pos = []
     if player_towns is not None:
         for town in player_towns[player-1]:

@@ -31,10 +31,17 @@ wheat_card = pygame.image.load("images/wheat_card.png").convert_alpha()
 timber_card = pygame.image.load("images/timber_card.png").convert_alpha()
 general_card = pygame.image.load("images/general_card.png").convert_alpha()
 
+#-Port Icons
+ore_icon = pygame.image.load("images/ore_icon.png").convert_alpha()
+sheep_icon = pygame.image.load("images/sheep_icon.png").convert_alpha()
+brick_icon = pygame.image.load("images/brick_icon.png").convert_alpha()
+wheat_icon = pygame.image.load("images/wheat_icon.png").convert_alpha()
+timber_icon = pygame.image.load("images/timber_icon.png").convert_alpha()
+
 font        = pygame.font.SysFont(None, 36)
 hover_font  = pygame.font.SysFont(None, 38)
-toggle_font = pygame.font.SysFont(None, 18)
-toggle_hover_font = pygame.font.SysFont(None, 21)
+toggle_font = pygame.font.SysFont(None, 16)
+toggle_hover_font = pygame.font.SysFont(None, 18)
 clock       = pygame.time.Clock()
 
 
@@ -93,9 +100,12 @@ class Button:
 endturn_btn   = Button("END TURN",   WIDTH // 1.1, HEIGHT // 1.1, 180, 50, ["FirstRound", "PlayerTurn"])
 startgame_btn = Button("START GAME", WIDTH // 1.3, HEIGHT // 1.3, 180, 50, ["Menu"])
 gen_btn       = Button("REGENERATE", WIDTH // 1.3, HEIGHT // 1.5, 180, 50, ["Menu"])
-toggle_btn    = Button("CENTER DESERT: ON",
-                       gen_btn.rect.right + 12 + 70, gen_btn.rect.top + 20,
-                       140, 40,["Menu"], btn_font=toggle_font, hover_font=toggle_hover_font)
+toggle_cd_btn    = Button("CENTER DESERT: ON",
+                       gen_btn.rect.right + 12 + 80, gen_btn.rect.top + 20,
+                       160, 40,["Menu"], btn_font=toggle_font, hover_font=toggle_hover_font)
+toggle_ports_btn = Button("ALTERNATING PORTS: ON",
+                          gen_btn.rect.right + 12 + 80, gen_btn.rect.top + 80,
+                       160, 40,["Menu"], btn_font=toggle_font, hover_font=toggle_hover_font)
 
 build_btn = Button("BUILD", WIDTH // 1.35, HEIGHT -HEIGHT // 1.1, 160, 50, ["PlayerTurn", "ReadyToRoll"])
 trade_btn = Button("TRADE", WIDTH // 1.35+180, HEIGHT -HEIGHT // 1.1, 160, 50, ["PlayerTurn", "ReadyToRoll"])
@@ -134,16 +144,23 @@ class InfoText:
         self.visible_in_game_state = visible_in_game_state
         self.player = player
  
-    def draw(self, mouse_pos, gamestate):
+    def draw(self, mouse_pos, gamestate, img=None, max_w=50, max_h=50):
         if str(gamestate) in self.visible_in_game_state:
             #c = self.hover_color if self.rect.collidepoint(mouse_pos) else self.color
             self.font = hover_font if self.rect.collidepoint(mouse_pos) else font
             #pygame.draw.rect(screen, c, self.rect, border_radius=8)
             lbl = self.font.render(self.label, True, BTN_TEXT)
             screen.blit(lbl, lbl.get_rect(center=self.rect.center))
+            if img is not None:
+                iw, ih = img.get_size()
+                scale = min(max_w / iw, max_h / ih, 1)
+                new_w = max(1, int(iw * scale))
+                new_h = max(1, int(ih * scale))
+                scaled_img = pygame.transform.smoothscale(img, (new_w, new_h))
+                screen.blit(scaled_img, lbl.get_rect(center=(self.rect.center[0],self.rect.center[1]+20 )))
 
 class Card:
-    def __init__(self, card_img, player,x,y, max_w = 60, max_h = 120):
+    def __init__(self, card_img, player,x,y, max_w = 50, max_h = 100):
         self.img = card_img
         self.player = player
         self.color = color_team[player]
