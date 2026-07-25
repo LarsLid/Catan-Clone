@@ -160,7 +160,7 @@ class InfoText:
                 screen.blit(scaled_img, lbl.get_rect(center=(self.rect.center[0],self.rect.center[1]+20 )))
 
 class Card:
-    def __init__(self, card_img, player,x,y, max_w = 50, max_h = 100):
+    def __init__(self, card_img, player,x,y, max_w = 45, max_h = 90):
         self.img = card_img
         self.player = player
         self.color = color_team[player]
@@ -210,7 +210,7 @@ class Card:
 
 def drawCards(player_resources, player, card_types, mouse_pos):
     n=0
-    spacing= 110
+    spacing= 90
     displace = 12
     resource_indexes = ["ore", "sheep", "brick", "wheat", "timber"]
     for resource, amount in player_resources[player].items():
@@ -227,7 +227,7 @@ def drawCards(player_resources, player, card_types, mouse_pos):
             pile = []
 
             for i in range(amountShown-1, -1, -1):
-                card = Card(card_types[card_type_index], player, 100+n*spacing+offset[i][0], HEIGHT//1.15-offset[i][0])
+                card = Card(card_types[card_type_index], player, 100+n*spacing+offset[i][0], HEIGHT//1.12-offset[i][0])
                 if card.rect.collidepoint(mouse_pos):
                     hover = True
                 else:

@@ -19,6 +19,17 @@ Costs=[["brick", "timber"],
        ["wheat", "sheep", "ore"]
        ]
 
+trade_costs = [
+    
+       ["ore", "ore"],
+       ["sheep", "sheep"],
+       ["brick", "brick"],
+       ["wheat", "wheat"],
+       ["timber", "timber"],
+       ["general", "general", "general"],
+       ["general", "general", "general", "general"],
+       ]
+
 
 town_being_upgraded = None
 
@@ -29,13 +40,15 @@ def firstRound(num_players):
     player_roads = []
     placed_first_town_road = []
     player_resources = []
+    player_trades = []
     for i in range(num_players):
         player_towns.append([])
         player_roads.append([])
         placed_first_town_road.append(0)
         player_resources.append({"ore":0, "sheep":0, "brick":0, "wheat":0, "timber":0})
+        player_trades.append([trade_costs[6]])
 
-    return player_towns, player_roads, placed_first_town_road, player_resources
+    return player_towns, player_roads, placed_first_town_road, player_resources, player_trades
 """
 
 
@@ -121,9 +134,10 @@ def canPlaceCheck (new_building, screen, primary_list, secondary_list, r, placin
                         return False
         return notStranded
 
-def findAdjacent(new_town, tile_centres, number_on_tile, r):
+def findAdjacent(new_town, tile_centres, number_on_tile, r, ports):
     s = math.sqrt(3)/2*r
     adjacent = []
+    portOnTile = None
     for centre in tile_centres:
                     index = None
                     if math.isclose(centre[0], new_town.pos[0], abs_tol=5) and math.isclose(centre[1], new_town.pos[1]-r, abs_tol=5):
@@ -140,7 +154,11 @@ def findAdjacent(new_town, tile_centres, number_on_tile, r):
                         index = tile_centres.index(centre)
                     if index != None:
                         adjacent.append(index)
-    return adjacent
+    for port in ports:
+        if math.isclose(new_town.pos[0], port.pos[0]) and math.isclose(new_town.pos[1], port.pos[1]):
+            portOnTile = port
+    
+    return adjacent, portOnTile
                     
             
 
@@ -155,6 +173,7 @@ class Town:
         self.color = color_team[self.team-1]
         self.level = 1 # 1 = Town, 2 = City
         self.adjacent = []
+        self.port = None
         self.size = 1
         self.placed = False
 

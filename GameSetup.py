@@ -14,7 +14,7 @@ def BoardSetup(r):
     tile_centres = []
     s= math.sqrt(3)/2*r
     h= r/2
-    board_height = 100
+    board_height = 120
     board_padding_width = 120
     oy=board_height
     for i in range(3):
@@ -152,14 +152,9 @@ def mapGen(mapseed, number_on_tile, cd):
             number_on_tile[i]=numbers[number_index]
             numbers.pop(number_index)
 
-trade_costs = [["general", "general", "general", "general"],
-       ["general", "general", "general"],
-       ["ore", "ore"],
-       ["sheep", "sheep"],
-       ["brick", "brick"],
-       ["wheat", "wheat"],
-       ["timber", "timber"]
-       ]
+
+
+
 
 ALTERNATING_PORTS = True
 def getRingOrder(town_spaces, tile_centres, r): #For ports
@@ -214,7 +209,7 @@ def getOrientation(ring_spaces, port_pairs, tile_centres, r):
     degs = [30, 90, 150, 210, 270, 330]
 
     port_orientations = []
-    tile_debug_list = []
+    from_tile_list = []
     for p1, p2 in result:
         # the one tile both pair positions are within reach of
         tile = next(c for c in tile_centres
@@ -225,24 +220,23 @@ def getOrientation(ring_spaces, port_pairs, tile_centres, r):
 
         best_deg = min(degs, key=lambda d: min(abs(d - angle), 360 - abs(d - angle)))
         orientation = orientations[degs.index(best_deg)]
-        port_orientations.append(orientation)
-        port_orientations.append(orientation)
-        tile_debug_list.append(tile_centres.index(tile))
-    print(tile_debug_list)
+        for i in range(2):
+            port_orientations.append(orientation)
+            from_tile_list.append(tile_centres.index(tile))
 
-    return result, port_orientations
+    return result, port_orientations, from_tile_list
 
 
 
 def generatePorts(ring_spaces, port_status, port_pairs, tile_centres,r):
     ports = []
-    result, port_orientations = getOrientation(ring_spaces, port_pairs,tile_centres, r)
+    result, port_orientations, from_tiles_list = getOrientation(ring_spaces, port_pairs,tile_centres, r)
     i=0
     tilt = 15
     for pos in ring_spaces:
         if port_status[ring_spaces.index(pos)]:
-            print(port_orientations[i])
-            ports.append(Port(port_orientations[i], pos, ["Wheat","Wheat","Wheat"], tilt))
+            #print(port_orientations[i])
+            ports.append(Port(port_orientations[i], pos, ["Wheat","Wheat","Wheat"], tilt, from_tiles_list[i]))
             i+=1
             tilt *= -1
     return ports
@@ -324,7 +318,7 @@ def offsetPolygon(pts, d): #Function made by claude, could probably be simplifie
 
 
 class Port():
-    def __init__(self, orientation, pos, trade, tilt):
+    def __init__(self, orientation, pos, trade, tilt, fromtile):
         start_deg = 330 #SW 
         orientations = ["NE", "E", "SE", "SW", "W", "NW"]
         degs = [30, 90, 150, 210, 270, 330]
@@ -335,6 +329,7 @@ class Port():
         self.color = (173, 102, 14)
         self.pts = [(2,0), (14,0), (16,50), (0, 50)]
         self.trade = trade
+        self.fromtile = fromtile
 
     def draw(self, screen,r): #Made with claude
         #Black background: same shape as the port, offset outward by a uniform distance

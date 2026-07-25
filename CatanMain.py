@@ -16,7 +16,7 @@ from DiceRoll import *
 pygame.display.set_caption("Catan")
 
 player = 0
-resource_types = ["ore", "sheep", "brick", "wheat", "timber"] #Useful for indexing
+resource_types = ["ore", "sheep", "brick", "wheat", "timber", "general"] #Useful for indexing
 tile_types = [ore_tile, sheep_tile, brick_tile, wheat_tile, timber_tile, desert_tile]
 card_types = [ore_card, sheep_card, brick_card, wheat_card, timber_card, general_card]
 icon_types = [ore_icon, sheep_icon, brick_icon, wheat_icon, timber_icon]
@@ -88,16 +88,24 @@ def findLockon (build_spaces, mouse_pos, screen):
 def debugStart ():
     global cur_game_state, player_towns, player_resources, town_spaces_main, tile_centres, number_on_tile, r, test
     cur_game_state = "PlayerTurn"
-    for i in range(len(player_resources)):
+    players = len(player_resources)
+    empty_town_spaces = town_spaces_main.copy()
+    for i in range(players):
         player_resources[i]["ore"] = 5
         player_resources[i]["sheep"] = 5
         player_resources[i]["brick"] = 5
         player_resources[i]["wheat"] = 5
         player_resources[i]["timber"] = 5
-        starter_town = Town(i+1)
-        starter_town.pos = town_spaces_main[rd.randint(0,len(town_spaces_main)-1)]
-        starter_town.adjacent = findAdjacent(starter_town, tile_centres, number_on_tile, r)
-        player_towns[i].append(starter_town)
+        
+        for j in range(10):
+            starter_town = Town(i+1)
+            pos = rd.randint(0,len(empty_town_spaces)-1)
+            starter_town.pos = empty_town_spaces[pos]
+            empty_town_spaces.pop(pos)
+            starter_town.adjacent, starter_town.port = findAdjacent(starter_town, tile_centres, number_on_tile, r, ports)
+            player_towns[i].append(starter_town)
+            if starter_town.port != None and list(starter_town.port.trade) not in player_trades[i]:
+                                player_trades[i].append(starter_town.port.trade)
 
 
 
@@ -116,6 +124,10 @@ ring_order, port_status, port_pairs = getRingOrder(town_spaces_main, tile_centre
 ring_spaces = [town_spaces_main[i] for i in ring_order]
 ports = generatePorts(ring_spaces, port_status, port_pairs, tile_centres, r)
 tradeNodes, nodeIcons = generateTrades(ALTERNATING_PORTS)
+for i in range(len(ports)):
+    ports[i].trade = trade_costs[resource_types.index(nodeIcons[i//2])]
+    print(ports[i].trade)
+
 snakedraft = 1
 
 player_towns = None
@@ -152,7 +164,8 @@ price_label_city = PriceLabel(Costs[2],WIDTH //1.3, icon_city.pos[1]-15,["ReadyT
 
 
 #Trade Menu
-general_trade_basic = TradeLabel(trade_costs[0],WIDTH //1.3, icon_road.pos[1]-15,["ReadyToRoll", "PlayerTurn"])
+
+general_trade_basic = TradeLabel(trade_costs[6],WIDTH //1.3, icon_road.pos[1]-15,["ReadyToRoll", "PlayerTurn"])
 
 isPlacingTown = False
 isPlacingRoad = False
@@ -181,6 +194,8 @@ while running:
                 player, cur_game_state, cur_dice_state, placed_first_town_road, snakedraft = endTurn(player, playerCount, cur_game_state, placed_first_town_road, snakedraft)
                 placeTownInfo = InfoText(None,cx//0.7, cy//3.5, 580, 40, player, ["FirstRound"])
                 player_action_ui = "Build"
+
+          
             elif gen_btn.is_clicked(mouse_pos):
                 mapGen(mapseed, number_on_tile, CENTER_DESERT)
                 tradeNodes, nodeIcons = generateTrades(ALTERNATING_PORTS)
@@ -194,7 +209,7 @@ while running:
                 for idx, btn in enumerate(player_btns):
                     if btn.is_clicked(mouse_pos):
                         playerCount = idx+2
-                        player_towns, player_roads, placed_first_town_road, player_resources = firstRound(playerCount)
+                        player_towns, player_roads, placed_first_town_road, player_resources, player_trades = firstRound(playerCount)
                         player = 1
                         print(f"PLAYER {player}'S TURN")
                         cur_game_state = "FirstRound"
@@ -212,7 +227,14 @@ while running:
                 player_action_ui = "Build"
             elif trade_btn.is_clicked(mouse_pos) and cur_game_state == "PlayerTurn":
                 player_action_ui = "Trade"
-                
+                available_trades = []
+                i=0
+                for trade in player_trades[player-1]:
+                    available_trades.append(TradeLabel(trade, WIDTH //1.3, icon_road.pos[1]-15+i*100,["ReadyToRoll", "PlayerTurn"]))
+                    i+=1
+
+                print(player_trades[player-1])      
+            
             elif town_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"] and player_action_ui=="Build":
                 if isPlacingTown:
                     isPlacingTown = False
@@ -245,8 +267,11 @@ while running:
                 new_town.pos = building_lockon
                 new_town.placed = True
                 isPlacingTown = False
-                new_town.adjacent = findAdjacent(new_town, tile_centres, number_on_tile, r)
+                new_town.adjacent, new_town.port = findAdjacent(new_town, tile_centres, number_on_tile, r, ports)
                 player_towns[player-1].append(new_town)
+                if new_town.port != None and new_town.port.trade not in player_trades[player-1]:
+                    player_trades[player-1].append(new_town.port.trade)
+
                 #Payment
                 if cur_game_state == "PlayerTurn":
                     player_resources[player-1]["sheep"]-=1
@@ -343,12 +368,15 @@ while running:
         j = int(i//2)
         amount=len(tradeNodes[j])
         resource_icon=nodeIcons[j]
+        adjuster = 0
         if resource_icon=="general":
             img=None
         else:
             img=icon_types[resource_types.index(resource_icon)]
-        adjuster = -40 if ports[i].pos[1] < 7*r and ports[i].deg >-110 and ports[i].deg <110 and img!=None else 0
-        offset = (r*math.sin(math.radians(ports[i].deg)), -r*math.cos(math.radians(ports[i].deg)))
+        if ports[i].orientation in ["W", "NW", "NE", "E"] and ports[i].fromtile <= 11 and img!=None:
+            adjuster = -30
+       # adjuster = -40 if ports[i].pos[1] < 7*r and ports[i].deg >-110 and ports[i].deg <110 and img!=None else 0
+        offset = (1.2*r*math.sin(math.radians(ports[i].deg)), -1.2*r*math.cos(math.radians(ports[i].deg)))
         infopos = ((ports[i].pos[0]+ports[i+1].pos[0])//2+offset[0], (ports[i].pos[1]+ports[i+1].pos[1])//2+offset[1]+adjuster) #Attempts to place the trade info between the 2 ports
         
         node = InfoText(f"{amount} : 1", infopos[0], infopos[1], 50, 30, 5, ["Menu", "FirstRound","ReadyToRoll", "PlayerTurn"])
@@ -371,8 +399,8 @@ while running:
         #Dice
         screen.blit(frame_surf, (WIDTH//1.6, HEIGHT//1.2)) 
         #CardHolder UI
-        card_area_rect = pygame.Rect(20, HEIGHT//1.25, WIDTH//1.7, 130)
-        fg_rect = pygame.Rect(30, HEIGHT//1.25, WIDTH//1.75, 120)
+        card_area_rect = pygame.Rect(20, HEIGHT//1.2, WIDTH//1.7, 105)
+        fg_rect = pygame.Rect(30, HEIGHT//1.2, WIDTH//1.75, 95)
         pygame.draw.rect(screen, (102, 62, 17), card_area_rect)
         pygame.draw.rect(screen, (186, 118, 41), fg_rect)
 
@@ -393,7 +421,11 @@ while running:
             price_label_town.draw(mouse_pos, cur_game_state, card_types)
             price_label_city.draw(mouse_pos, cur_game_state, card_types)
         if player_action_ui == "Trade":
-            general_trade_basic.draw(mouse_pos, cur_game_state, card_types)
+            for i in range(len(available_trades)):
+                available_trades[i].draw(mouse_pos, cur_game_state, card_types)
+
+            
+                
 
 
 
