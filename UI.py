@@ -10,6 +10,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 
 BG_COLOR  = (30, 80, 160)
 BTN_COLOR = (220, 180, 80)
+UNVBLE_BTN_COLOR = (130,130,130)
 BTN_HOVER = (240, 200, 100)
 BTN_TEXT  = (30, 30, 30)
 BOARD = (255, 198, 41)
@@ -46,7 +47,7 @@ clock       = pygame.time.Clock()
 
 
 class Button:
-    def __init__(self, label, cx, cy, w, h, visible_in_game_state=list, btn_font=None, color=BTN_COLOR, hover_color=BTN_HOVER, hover_font=hover_font):
+    def __init__(self, label, cx, cy, w, h, visible_in_game_state=list, btn_font=None, hover_font=hover_font, color=BTN_COLOR, hover_color=BTN_HOVER ):
         self.label       = label
         self.rect        = pygame.Rect(int(cx - w // 2), int(cy - h // 2), int(w), int(h))
         self.hover_rect  = self.rect.inflate(7,7)
@@ -246,11 +247,11 @@ def drawCards(player_resources, player, card_types, mouse_pos):
             n+=1
 
 class PriceLabel:
-    def __init__(self, price, x, y,visible_in_game_state,color=BTN_COLOR, hover_color=BTN_HOVER, ):
+    def __init__(self, price, x, y,visible_in_game_state, w=230, h=80, color=BTN_COLOR, hover_color=BTN_HOVER,):
         self.price = price
         self.x = x
         self.y = y
-        self.w, self.h = 230, 80
+        self.w, self.h = w,h
         self.rect        = pygame.Rect(int(self.x - self.w // 2), int(self.y - self.h // 2), int(self.w), int(self.h))
         self.hover_rect  = self.rect.inflate(7,7)
         self.color       = color
@@ -285,7 +286,14 @@ class PriceLabel:
             self.clickable = False
 
 class TradeLabel(PriceLabel):
+    def __init__(self, price, x, y, visible_in_game_state, w=230, h=80, color=BTN_COLOR, hover_color=BTN_HOVER, trade_possible=True):
+        super().__init__(price, x, y, visible_in_game_state, w, h, color, hover_color)
+        self.trade_possible = trade_possible
+
     def draw(self, mouse_pos, gamestate, card_types):
+        self.rect        = pygame.Rect(int(self.x - self.w // 2), int(self.y - self.h // 2), int(self.w), int(self.h))
+        self.hover_rect  = self.rect.inflate(7,7)
+
         if str(gamestate) in self.visible_in_game_state:
             self.clickable = True
             if self.rect.collidepoint(mouse_pos):
@@ -300,13 +308,15 @@ class TradeLabel(PriceLabel):
             pygame.draw.rect(screen, c, rect, border_radius=8)
             resource_indexes = ["ore", "sheep", "brick", "wheat", "timber", "general"]
             cardAmount = len(self.price)
-            spacing = (230 - cardAmount*30)//(cardAmount+2)
+            card_h = self.h//1.4
+            card_w = card_h//2
+            
+            spacing = (230 - cardAmount*card_w)//(cardAmount+2)
             i=0
             for priceCard in self.price:
                 i+=1
                 card_type_index = resource_indexes.index(priceCard)
-                card_w = 30
-                card = Card(card_types[card_type_index], 4, (self.x-self.w//2-15)+(spacing+card_w)*i, self.y, card_w, 60)
+                card = Card(card_types[card_type_index], 4, (self.x-self.w//2-15)+(spacing+card_w)*i, self.y, card_w, card_h)
                 card.draw(hover)
         else:
             self.clickable = False

@@ -85,7 +85,7 @@ def findLockon (build_spaces, mouse_pos, screen):
             building_lockon = (build_spaces[i][0], build_spaces[i][1])
     return building_lockon
 
-def debugStart (start_with_resources=True):
+def debugStart (start_with_resources=True, all_trades_available=False):
     global cur_game_state, player_towns, player_resources, town_spaces_main, tile_centres, number_on_tile, r, test
     cur_game_state = "ReadyToRoll"
     players = len(player_resources)
@@ -130,6 +130,17 @@ def debugStart (start_with_resources=True):
                 starter_road.orientation = road_orientation[road_index]
                 starter_road.placed = True
                 player_roads[i].append(starter_road)
+
+        if all_trades_available:
+            player_trades[i] = [    
+                        ["general", "general", "general", "general"],
+                        ["general", "general", "general"],
+                        ["ore", "ore"],
+                        ["sheep", "sheep"],
+                        ["brick", "brick"],
+                        ["wheat", "wheat"],
+                        ["timber", "timber"],
+]
                 
 
 
@@ -191,8 +202,6 @@ price_label_city = PriceLabel(Costs[2],WIDTH //1.3, icon_city.pos[1]-15,["ReadyT
 
 #Trade Menu
 
-general_trade_basic = TradeLabel(trade_costs[6],WIDTH //1.3, icon_road.pos[1]-15,["ReadyToRoll", "PlayerTurn"])
-
 isPlacingTown = False
 isPlacingRoad = False
 isPlacingCity = False
@@ -212,9 +221,11 @@ while running:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 running = False
-            if event.key == pygame.K_r:
+            if event.key == pygame.K_r: #Return to Menu
                 cur_game_state = "Menu"
                 player_towns, player_roads, placed_first_town_road, player_resources, player_trades = firstRound(2)
+            if event.key == pygame.K_t: #Purely debug to add available trades
+                player_trades[player-1].append(["sheep", "sheep"])
 
 
         if event.type == pygame.VIDEORESIZE:
@@ -247,7 +258,7 @@ while running:
                         cur_game_state = "FirstRound"
                         building_lockon = (0,0)
                         show_player_selection = False
-                        debugStart(False) #Debug to test features faster, should be removed for normal play
+                        debugStart(True, False) #Debug to test features faster, should be removed for normal play
                         break
             elif throw_dice_btn.is_clicked(mouse_pos) and cur_dice_state=="Ready" and cur_game_state == "ReadyToRoll":
                 current_frame = 0
@@ -262,8 +273,30 @@ while running:
                 available_trades = []
                 i=0
                 player_trades[player-1] = sorted(player_trades[player-1], key=trade_costs_display_order.index) #Sorts available trades in menu
+                trades_len = len(player_trades[player-1])
+                if trades_len < 5:
+                    label_h = 80
+                    fontSize = 25
+                else:
+                    label_h  = 80 //(1+(trades_len-4)/6) #Scales down label_h when trades exceed 5, to fit on screen
+                    fontSize = 25//(1+(trades_len-4)/20)
+                
+                trade_with_others_font = pygame.font.SysFont(None, int(fontSize))
+                trade_with_others_hover_font = pygame.font.SysFont(None, int(fontSize*1.1))
+                
+                trade_with_others_btn = Button("TRADE WITH PLAYERS", WIDTH//1.5,icon_road.pos[1]-15, 230, label_h, ["ReadyToRoll", "PlayerTurn"], trade_with_others_font, trade_with_others_hover_font)
                 for trade in player_trades[player-1]:
-                    available_trades.append(TradeLabel(trade, WIDTH //1.3, icon_road.pos[1]-15+i*100,["ReadyToRoll", "PlayerTurn"]))
+                    resource = trade[0]
+                    color = (0,0,120)
+                    trade_possible = True
+                    if resource != "general":
+                        if player_resources[player-1][str(resource)] >= len(trade):
+                            color = BTN_COLOR
+                            trade_possible = True
+                        else:
+                            color = UNVBLE_BTN_COLOR
+                            trade_possible = False
+                    available_trades.append(TradeLabel(trade, WIDTH //1.5, icon_road.pos[1]-15+(i+1)*(label_h*1.15),["ReadyToRoll", "PlayerTurn"], 230, label_h, color, trade_possible=trade_possible))
                     i+=1
                 
 
@@ -455,6 +488,7 @@ while running:
             price_label_town.draw(mouse_pos, cur_game_state, card_types)
             price_label_city.draw(mouse_pos, cur_game_state, card_types)
         if player_action_ui == "Trade":
+            trade_with_others_btn.draw(mouse_pos, cur_game_state)
             for i in range(len(available_trades)):
                 available_trades[i].draw(mouse_pos, cur_game_state, card_types)
 
