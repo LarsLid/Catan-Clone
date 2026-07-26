@@ -85,27 +85,53 @@ def findLockon (build_spaces, mouse_pos, screen):
             building_lockon = (build_spaces[i][0], build_spaces[i][1])
     return building_lockon
 
-def debugStart ():
+def debugStart (start_with_resources=True):
     global cur_game_state, player_towns, player_resources, town_spaces_main, tile_centres, number_on_tile, r, test
-    cur_game_state = "PlayerTurn"
+    cur_game_state = "ReadyToRoll"
     players = len(player_resources)
     empty_town_spaces = town_spaces_main.copy()
+    place_order_override_towns = [0 for i in range(players)]
+    place_order_override_roads = [1 for i in range(players)]
     for i in range(players):
-        player_resources[i]["ore"] = 5
-        player_resources[i]["sheep"] = 5
-        player_resources[i]["brick"] = 5
-        player_resources[i]["wheat"] = 5
-        player_resources[i]["timber"] = 5
+        if start_with_resources:
+            player_resources[i]["ore"] = 5
+            player_resources[i]["sheep"] = 5
+            player_resources[i]["brick"] = 5
+            player_resources[i]["wheat"] = 5
+            player_resources[i]["timber"] = 5
         
-        for j in range(10):
+        for j in range(2): #How many starter_towns per player?
             starter_town = Town(i+1)
-            pos = rd.randint(0,len(empty_town_spaces)-1)
-            starter_town.pos = empty_town_spaces[pos]
-            empty_town_spaces.pop(pos)
-            starter_town.adjacent, starter_town.port = findAdjacent(starter_town, tile_centres, number_on_tile, r, ports)
+            valid = False
+            while valid == False: #This while loops runs until a valid space for a town is found (at least 2 roads from any placed town)
+                pos = rd.randint(0,len(empty_town_spaces)-1)
+                starter_town.pos = empty_town_spaces[pos]
+                empty_town_spaces.pop(pos)
+                starter_town.adjacent, starter_town.port = findAdjacent(starter_town, tile_centres, number_on_tile, r, ports)
+                
+                if starter_town.port != None and list(starter_town.port.trade) not in player_trades[i]:
+                                    player_trades[i].append(starter_town.port.trade)
+
+                valid = canPlaceCheck(starter_town, screen, player_towns, player_roads, r, "town", i+1, cur_game_state, place_order_override_towns)
             player_towns[i].append(starter_town)
-            if starter_town.port != None and list(starter_town.port.trade) not in player_trades[i]:
-                                player_trades[i].append(starter_town.port.trade)
+
+            starter_road = Road(i+1)
+            last_town_only = [[] for _ in range(players)]
+            last_town_only[i] = [starter_town]
+            no_roads_debug = [[] for _ in range(players)]
+            possible_roads_indexes = []
+            for k in range(len(road_centres)):
+                starter_road.pos = road_centres[k]
+                if canPlaceCheck(starter_road, screen, no_roads_debug, last_town_only, r, "road", i+1, cur_game_state, place_order_override_roads):
+                    possible_roads_indexes.append(k)
+            if len(possible_roads_indexes)>0:
+                road_index = rd.choice(possible_roads_indexes)
+                starter_road.pos = road_centres[road_index]
+                starter_road.orientation = road_orientation[road_index]
+                starter_road.placed = True
+                player_roads[i].append(starter_road)
+                
+
 
 
 
@@ -183,8 +209,14 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            running = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                running = False
+            if event.key == pygame.K_r:
+                cur_game_state = "Menu"
+                player_towns, player_roads, placed_first_town_road, player_resources, player_trades = firstRound(2)
+
+
         if event.type == pygame.VIDEORESIZE:
             width, height = event.w, event.h
             screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
@@ -215,7 +247,7 @@ while running:
                         cur_game_state = "FirstRound"
                         building_lockon = (0,0)
                         show_player_selection = False
-                        debugStart() #Debug to test features faster, should be removed for normal play
+                        debugStart(False) #Debug to test features faster, should be removed for normal play
                         break
             elif throw_dice_btn.is_clicked(mouse_pos) and cur_dice_state=="Ready" and cur_game_state == "ReadyToRoll":
                 current_frame = 0
@@ -229,9 +261,11 @@ while running:
                 player_action_ui = "Trade"
                 available_trades = []
                 i=0
+                player_trades[player-1] = sorted(player_trades[player-1], key=trade_costs_display_order.index) #Sorts available trades in menu
                 for trade in player_trades[player-1]:
                     available_trades.append(TradeLabel(trade, WIDTH //1.3, icon_road.pos[1]-15+i*100,["ReadyToRoll", "PlayerTurn"]))
                     i+=1
+                
 
                 print(player_trades[player-1])      
             

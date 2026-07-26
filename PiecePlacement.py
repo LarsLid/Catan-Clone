@@ -29,6 +29,16 @@ trade_costs = [
        ["general", "general", "general"],
        ["general", "general", "general", "general"],
        ]
+#Ensures fixed ordering of trades in trade menu. trade_costs is ordered the way it is for resources to correspond to their universal indeces
+trade_costs_display_order = [
+    ["general", "general", "general", "general"],
+    ["general", "general", "general"],
+    ["ore", "ore"],
+    ["sheep", "sheep"],
+    ["brick", "brick"],
+    ["wheat", "wheat"],
+    ["timber", "timber"],
+]
 
 
 town_being_upgraded = None
