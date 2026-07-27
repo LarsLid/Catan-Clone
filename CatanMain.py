@@ -86,8 +86,10 @@ def findLockon (build_spaces, mouse_pos, screen):
     return building_lockon
 
 def debugStart (start_with_resources=True, all_trades_available=False):
-    global cur_game_state, player_towns, player_resources, town_spaces_main, tile_centres, number_on_tile, r, test
+    global cur_game_state, cur_dice_state, player_action_ui, player_towns, player_resources, town_spaces_main, tile_centres, number_on_tile, r, test
     cur_game_state = "ReadyToRoll"
+    cur_dice_state = "Ready"
+    player_action_ui = "Build"
     players = len(player_resources)
     empty_town_spaces = town_spaces_main.copy()
     place_order_override_towns = [0 for i in range(players)]
@@ -100,7 +102,7 @@ def debugStart (start_with_resources=True, all_trades_available=False):
             player_resources[i]["wheat"] = 5
             player_resources[i]["timber"] = 5
         
-        for j in range(2): #How many starter_towns per player?
+        for j in range(3): #How many starter_towns per player?
             starter_town = Town(i+1)
             valid = False
             while valid == False: #This while loops runs until a valid space for a town is found (at least 2 roads from any placed town)
@@ -141,6 +143,7 @@ def debugStart (start_with_resources=True, all_trades_available=False):
                         ["wheat", "wheat"],
                         ["timber", "timber"],
 ]
+    
                 
 
 
@@ -207,6 +210,7 @@ isPlacingRoad = False
 isPlacingCity = False
 
 player_action_ui = "Build"
+trade_menu = "Ports"
 
 running = True
 
@@ -223,6 +227,7 @@ while running:
                 running = False
             if event.key == pygame.K_r: #Return to Menu
                 cur_game_state = "Menu"
+                trade_menu = "Ports"
                 player_towns, player_roads, placed_first_town_road, player_resources, player_trades = firstRound(2)
             if event.key == pygame.K_t: #Purely debug to add available trades
                 player_trades[player-1].append(["sheep", "sheep"])
@@ -232,13 +237,14 @@ while running:
             width, height = event.w, event.h
             screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
             UI.screen = screen
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if event.type == pygame.MOUSEBUTTONDOWN: # MOUSECLICK EVENTS BELOW
+
             if endturn_btn.is_clicked(mouse_pos):
                 player, cur_game_state, cur_dice_state, placed_first_town_road, snakedraft = endTurn(player, playerCount, cur_game_state, placed_first_town_road, snakedraft)
                 placeTownInfo = InfoText(None,cx//0.7, cy//3.5, 580, 40, player, ["FirstRound"])
                 player_action_ui = "Build"
+                trade_menu = "Ports"
 
-          
             elif gen_btn.is_clicked(mouse_pos):
                 mapGen(mapseed, number_on_tile, CENTER_DESERT)
                 tradeNodes, nodeIcons = generateTrades(ALTERNATING_PORTS)
@@ -256,9 +262,13 @@ while running:
                         player = 1
                         print(f"PLAYER {player}'S TURN")
                         cur_game_state = "FirstRound"
+                        twp_btn_w = 450
+                        twp_btn_h = 100
+                        trade_with_player_btns = [Button(f"TRADE WITH P{i+1}", WIDTH//1.4, HEIGHT//3, twp_btn_w, twp_btn_h, ["PlayerTurn"]) for i in range(playerCount)]
+
                         building_lockon = (0,0)
                         show_player_selection = False
-                        debugStart(True, False) #Debug to test features faster, should be removed for normal play
+                        #debugStart(True, False) #Debug to test features faster, should be removed for normal play
                         break
             elif throw_dice_btn.is_clicked(mouse_pos) and cur_dice_state=="Ready" and cur_game_state == "ReadyToRoll":
                 current_frame = 0
@@ -289,87 +299,107 @@ while running:
                     resource = trade[0]
                     color = (0,0,120)
                     trade_possible = True
-                    if resource != "general":
-                        if player_resources[player-1][str(resource)] >= len(trade):
-                            color = BTN_COLOR
-                            trade_possible = True
-                        else:
-                            color = UNVBLE_BTN_COLOR
-                            trade_possible = False
+                    if resource == "general":
+                        resources_needed = max(player_resources[player-1].values())
+                    else:
+                        resources_needed = player_resources[player-1][str(resource)]
+                    if  resources_needed >= len(trade):
+                        color = BTN_COLOR
+                        trade_possible = True
+                    else:
+                        color = UNVBLE_BTN_COLOR
+                        trade_possible = False
                     available_trades.append(TradeLabel(trade, WIDTH //1.5, icon_road.pos[1]-15+(i+1)*(label_h*1.15),["ReadyToRoll", "PlayerTurn"], 230, label_h, color, trade_possible=trade_possible))
                     i+=1
-                
+            
 
                 print(player_trades[player-1])      
+            if player_action_ui=="Build":
+                if town_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"]:
+                    if isPlacingTown:
+                        isPlacingTown = False
+                    elif isPlacingTown == False and isPlacingRoad == False and isPlacingCity == False:
+                        if cur_game_state == "PlayerTurn":
+                            if player_resources[player-1]["wheat"]<1 or player_resources[player-1]["brick"]<1 or player_resources[player-1]["sheep"]<1 or player_resources[player-1]["timber"]<1:
+                                break
+                        isPlacingTown = True
+                        new_town = Town(player)
+                elif road_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"]:
+                    if isPlacingRoad:
+                        isPlacingRoad = False
+                    elif isPlacingRoad == False and isPlacingTown == False and isPlacingCity == False:
+                        if cur_game_state == "PlayerTurn":
+                            if player_resources[player-1]["timber"]<1 or player_resources[player-1]["brick"]<1:
+                                break
+                        isPlacingRoad = True
+                        new_road = Road(player)
+                elif city_store_btn.is_clicked(mouse_pos) and cur_game_state in ["PlayerTurn"]:
+                    if isPlacingCity:
+                        isPlacingCity = False
+                    elif isPlacingTown == False and isPlacingRoad == False and isPlacingCity == False:
+                        if cur_game_state == "PlayerTurn":
+                            if player_resources[player-1]["wheat"]<2 or player_resources[player-1]["ore"]<3 :
+                                break
+                        isPlacingCity = True
+                        new_town = Town(player)
+                        new_town.level = 2
+
+            if player_action_ui=="Trade":
+                if trade_with_others_btn.is_clicked(mouse_pos):
+                    if trade_menu == "Ports":
+                        trade_menu = "SelectPlayer"
+                        trade_with_others_btn.label = "TRADE WITH PORTS"
+                    elif trade_menu == "SelectPlayer":
+                        trade_menu = "Ports"
+                        trade_with_others_btn.label = "TRADE WITH PLAYERS"
+
+                                
             
-            elif town_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"] and player_action_ui=="Build":
-                if isPlacingTown:
+            if isPlacingTown and building_lockon != (0,0):
+                if canPlaceCheck(new_town, screen, player_towns, player_roads, r, "town", player, cur_game_state, placed_first_town_road):
+                    new_town.pos = building_lockon
+                    new_town.placed = True
                     isPlacingTown = False
-                elif isPlacingTown == False and isPlacingRoad == False and isPlacingCity == False:
+                    new_town.adjacent, new_town.port = findAdjacent(new_town, tile_centres, number_on_tile, r, ports)
+                    player_towns[player-1].append(new_town)
+                    if new_town.port != None and new_town.port.trade not in player_trades[player-1]:
+                        player_trades[player-1].append(new_town.port.trade)
+
+                    #Payment
                     if cur_game_state == "PlayerTurn":
-                        if player_resources[player-1]["wheat"]<1 or player_resources[player-1]["brick"]<1 or player_resources[player-1]["sheep"]<1 or player_resources[player-1]["timber"]<1:
-                            break
-                    isPlacingTown = True
-                    new_town = Town(player)
-            elif road_store_btn.is_clicked(mouse_pos) and cur_game_state in ["FirstRound","PlayerTurn"] and player_action_ui=="Build":
-                if isPlacingRoad:
+                        player_resources[player-1]["sheep"]-=1
+                        player_resources[player-1]["brick"]-=1
+                        player_resources[player-1]["wheat"]-=1
+                        player_resources[player-1]["timber"]-=1
+
+                    placed_first_town_road[player-1]+=1
+            elif isPlacingRoad and building_lockon != (0,0):
+                if canPlaceCheck(new_road, screen, player_roads, player_towns, r, "road", player, cur_game_state, placed_first_town_road):
+                    new_road.pos = building_lockon
+                    new_road.placed = True
                     isPlacingRoad = False
-                elif isPlacingRoad == False and isPlacingTown == False and isPlacingCity == False:
+                    player_roads[player-1].append(new_road)
+                    #Payment
                     if cur_game_state == "PlayerTurn":
-                        if player_resources[player-1]["timber"]<1 or player_resources[player-1]["brick"]<1:
-                            break
-                    isPlacingRoad = True
-                    new_road = Road(player)
-            elif city_store_btn.is_clicked(mouse_pos) and cur_game_state in ["PlayerTurn"] and player_action_ui=="Build":
-                if isPlacingCity:
+                        player_resources[player-1]["brick"]-=1
+                        player_resources[player-1]["timber"]-=1
+
+                    placed_first_town_road[player-1]+=1
+
+            elif isPlacingCity and building_lockon != (0,0):
+                if canPlaceCheck(new_town, screen, player_towns, player_roads, r, "city", player, cur_game_state, placed_first_town_road):
+                    new_town.pos = building_lockon
+                    new_town.placed = True
                     isPlacingCity = False
-                elif isPlacingTown == False and isPlacingRoad == False and isPlacingCity == False:
+
+                    if PiecePlacement.town_being_upgraded is not None:
+                        PiecePlacement.town_being_upgraded.level = 2
+                    #Payment
                     if cur_game_state == "PlayerTurn":
-                        if player_resources[player-1]["wheat"]<2 or player_resources[player-1]["ore"]<3 :
-                            break
-                    isPlacingCity = True
-                    new_town = Town(player)
-                    new_town.level = 2
-            elif isPlacingTown and building_lockon != (0,0) and canPlaceCheck(new_town, screen, player_towns, player_roads, r, "town", player, cur_game_state, placed_first_town_road):
-                new_town.pos = building_lockon
-                new_town.placed = True
-                isPlacingTown = False
-                new_town.adjacent, new_town.port = findAdjacent(new_town, tile_centres, number_on_tile, r, ports)
-                player_towns[player-1].append(new_town)
-                if new_town.port != None and new_town.port.trade not in player_trades[player-1]:
-                    player_trades[player-1].append(new_town.port.trade)
+                        player_resources[player-1]["wheat"]-=2
+                        player_resources[player-1]["ore"]-=3
 
-                #Payment
-                if cur_game_state == "PlayerTurn":
-                    player_resources[player-1]["sheep"]-=1
-                    player_resources[player-1]["brick"]-=1
-                    player_resources[player-1]["wheat"]-=1
-                    player_resources[player-1]["timber"]-=1
-
-                placed_first_town_road[player-1]+=1
-            elif isPlacingRoad and building_lockon != (0,0) and canPlaceCheck(new_road, screen, player_roads, player_towns, r, "road", player, cur_game_state, placed_first_town_road):
-                new_road.pos = building_lockon
-                new_road.placed = True
-                isPlacingRoad = False
-                player_roads[player-1].append(new_road)
-                #Payment
-                if cur_game_state == "PlayerTurn":
-                    player_resources[player-1]["brick"]-=1
-                    player_resources[player-1]["timber"]-=1
-
-                placed_first_town_road[player-1]+=1
-
-            elif isPlacingCity and building_lockon != (0,0) and canPlaceCheck(new_town, screen, player_towns, player_roads, r, "city", player, cur_game_state, placed_first_town_road):
-                new_town.pos = building_lockon
-                new_town.placed = True
-                isPlacingCity = False
-
-                if PiecePlacement.town_being_upgraded is not None:
-                    PiecePlacement.town_being_upgraded.level = 2
-                #Payment
-                if cur_game_state == "PlayerTurn":
-                    player_resources[player-1]["wheat"]-=2
-                    player_resources[player-1]["ore"]-=3
+            
     screen.fill(BG_COLOR)
 
     endturn_btn.draw(mouse_pos, cur_game_state)
@@ -471,7 +501,7 @@ while running:
         pygame.draw.rect(screen, (102, 62, 17), card_area_rect)
         pygame.draw.rect(screen, (186, 118, 41), fg_rect)
 
-        drawCards(player_resources, player-1, card_types, mouse_pos)
+        drawCards(player_resources, player-1, card_types, mouse_pos, 45, 90, 100, HEIGHT//1.2)
 
         """
         testCard = Card(card_types[1], 0, 400, 100)
@@ -489,8 +519,20 @@ while running:
             price_label_city.draw(mouse_pos, cur_game_state, card_types)
         if player_action_ui == "Trade":
             trade_with_others_btn.draw(mouse_pos, cur_game_state)
-            for i in range(len(available_trades)):
-                available_trades[i].draw(mouse_pos, cur_game_state, card_types)
+            if trade_menu == "Ports":
+                for i in range(len(available_trades)):
+                    available_trades[i].draw(mouse_pos, cur_game_state, card_types)
+            elif trade_menu == "SelectPlayer":
+                j=0
+                for i in range(len(trade_with_player_btns)):
+                    if i+1 !=player:
+                        trade_with_player_btns[i].move_to(WIDTH//1.32, HEIGHT//2.5+j*(twp_btn_h*1.1))
+                        trade_with_player_btns[i].wrap = True
+                        trade_with_player_btns[i].wrap_width = 150
+                        trade_with_player_btns[i].center_offset = 160
+                        trade_with_player_btns[i].draw(mouse_pos, cur_game_state)
+                        drawCards(player_resources, i, card_types, mouse_pos, 30,60, WIDTH//1.32-70,  HEIGHT//2.5+j*(twp_btn_h*1.1-20))
+                        j+=1
 
             
                 

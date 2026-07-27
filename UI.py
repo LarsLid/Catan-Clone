@@ -47,9 +47,11 @@ clock       = pygame.time.Clock()
 
 
 class Button:
-    def __init__(self, label, cx, cy, w, h, visible_in_game_state=list, btn_font=None, hover_font=hover_font, color=BTN_COLOR, hover_color=BTN_HOVER ):
+    def __init__(self, label, cx, cy, w, h, visible_in_game_state=list, btn_font=None, hover_font=hover_font, color=BTN_COLOR, hover_color=BTN_HOVER, center_offset = 0, wrap = False, wrap_width = None):
         self.label       = label
-        self.rect        = pygame.Rect(int(cx - w // 2), int(cy - h // 2), int(w), int(h))
+        self.pos         = (cx, cy)
+        self.w, self.h   = w, h
+        self.rect        = pygame.Rect(int(self.pos[0] - w // 2), int(self.pos[1] - h // 2), int(self.w), int(self.h))
         self.hover_rect  = self.rect.inflate(7,7)
         self.font        = btn_font if btn_font is not None else font
         self.hover_font = hover_font
@@ -57,6 +59,14 @@ class Button:
         self.hover_color = hover_color
         self.visible_in_game_state = visible_in_game_state
         self.clickable = False
+        self.center_offset = center_offset
+        self.wrap = wrap
+        self.wrap_width = wrap_width
+
+    def move_to(self, cx, cy):
+        self.pos        = (cx, cy)
+        self.rect        = pygame.Rect(int(cx - self.w // 2), int(cy - self.h // 2), int(self.w), int(self.h))
+        self.hover_rect  = self.rect.inflate(7,7)
 
     def draw(self, mouse_pos, gamestate):
         if str(gamestate) in self.visible_in_game_state:
@@ -71,11 +81,36 @@ class Button:
                 btn_font_final = self.font
 
             pygame.draw.rect(screen, c, rect, border_radius=8)
-            lbl = btn_font_final.render(self.label, True, BTN_TEXT)
-            screen.blit(lbl, lbl.get_rect(center=self.rect.center))
+
+            label_center = (self.rect.centerx - self.center_offset, self.rect.centery)
+            if self.wrap:
+                max_width = self.wrap_width if self.wrap_width is not None else self.w
+                lines = self.wrap_label(self.label, btn_font_final, max_width)
+                line_h = btn_font_final.get_linesize()
+                top = label_center[1] - (line_h * len(lines)) // 2
+                for i, line in enumerate(lines):
+                    lbl = btn_font_final.render(line, True, BTN_TEXT)
+                    screen.blit(lbl, lbl.get_rect(center=(label_center[0], top + line_h * i + line_h // 2)))
+            else:
+                lbl = btn_font_final.render(self.label, True, BTN_TEXT)
+                screen.blit(lbl, lbl.get_rect(center=label_center))
         else:
             self.clickable = False
 
+    def wrap_label(self, text, btn_font, max_width): #Claude
+        words = text.split(" ")
+        lines = []
+        current = ""
+        for word in words:
+            candidate = f"{current} {word}".strip()
+            if btn_font.size(candidate)[0] <= max_width or not current:
+                current = candidate
+            else:
+                lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
+        return lines
 
     def draw_icon(self, mouse_pos, gamestate, icon,r):
         if str(gamestate) in self.visible_in_game_state:
@@ -110,6 +145,8 @@ toggle_ports_btn = Button("ALTERNATING PORTS: ON",
 
 build_btn = Button("BUILD", WIDTH // 1.35, HEIGHT -HEIGHT // 1.1, 160, 50, ["PlayerTurn", "ReadyToRoll"])
 trade_btn = Button("TRADE", WIDTH // 1.35+180, HEIGHT -HEIGHT // 1.1, 160, 50, ["PlayerTurn", "ReadyToRoll"])
+
+
 
 
 
@@ -209,10 +246,10 @@ class Card:
 
         
 
-def drawCards(player_resources, player, card_types, mouse_pos):
+def drawCards(player_resources, player, card_types, mouse_pos, card_w, card_h, x, y):
     n=0
-    spacing= 90
-    displace = 12
+    spacing= card_w*2
+    displace = card_w//3.75
     resource_indexes = ["ore", "sheep", "brick", "wheat", "timber"]
     for resource, amount in player_resources[player].items():
         card_type_index = resource_indexes.index(resource)
@@ -228,7 +265,7 @@ def drawCards(player_resources, player, card_types, mouse_pos):
             pile = []
 
             for i in range(amountShown-1, -1, -1):
-                card = Card(card_types[card_type_index], player, 100+n*spacing+offset[i][0], HEIGHT//1.12-offset[i][0])
+                card = Card(card_types[card_type_index], player, x+n*spacing+offset[i][0], y//0.93-offset[i][0], card_w, card_h)
                 if card.rect.collidepoint(mouse_pos):
                     hover = True
                 else:
@@ -242,7 +279,7 @@ def drawCards(player_resources, player, card_types, mouse_pos):
                     card.draw(True)
                 else:
                     card.draw(False)
-            amount_label = Button(str(amount),100+n*spacing, HEIGHT//1.2+40, 40, 40, ["ReadyToRoll", "PlayerTurn"])
+            amount_label = Button(str(amount),x+n*spacing, y+40, card_w*0.9, card_w*0.9, ["ReadyToRoll", "PlayerTurn"])
             amount_label.draw(mouse_pos, "PlayerTurn")
             n+=1
 

@@ -51,6 +51,7 @@ def firstRound(num_players):
     placed_first_town_road = []
     player_resources = []
     player_trades = []
+
     for i in range(num_players):
         player_towns.append([])
         player_roads.append([])
@@ -178,7 +179,7 @@ def findAdjacent(new_town, tile_centres, number_on_tile, r, ports):
 
 class Town:
     def __init__(self, team):
-        self.pos = 0
+        self.pos = (0,0)
         self.team = team
         self.color = color_team[self.team-1]
         self.level = 1 # 1 = Town, 2 = City
@@ -276,7 +277,7 @@ class Town:
 
 class Road:
     def __init__(self, team):
-        self.pos = 0
+        self.pos = (0,0)
         self.team = team
         self.color = color_team[self.team-1]
         self.size = 1
