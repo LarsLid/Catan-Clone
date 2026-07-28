@@ -268,7 +268,7 @@ while running:
 
                         building_lockon = (0,0)
                         show_player_selection = False
-                        #debugStart(True, False) #Debug to test features faster, should be removed for normal play
+                        debugStart(True, False) #Debug to test features faster, should be removed for normal play
                         break
             elif throw_dice_btn.is_clicked(mouse_pos) and cur_dice_state=="Ready" and cur_game_state == "ReadyToRoll":
                 current_frame = 0
@@ -278,39 +278,10 @@ while running:
 
             elif build_btn.is_clicked(mouse_pos) and cur_game_state == "PlayerTurn":
                 player_action_ui = "Build"
+                trade_menu="Ports"
             elif trade_btn.is_clicked(mouse_pos) and cur_game_state == "PlayerTurn":
                 player_action_ui = "Trade"
-                available_trades = []
-                i=0
-                player_trades[player-1] = sorted(player_trades[player-1], key=trade_costs_display_order.index) #Sorts available trades in menu
-                trades_len = len(player_trades[player-1])
-                if trades_len < 5:
-                    label_h = 80
-                    fontSize = 25
-                else:
-                    label_h  = 80 //(1+(trades_len-4)/6) #Scales down label_h when trades exceed 5, to fit on screen
-                    fontSize = 25//(1+(trades_len-4)/20)
-                
-                trade_with_others_font = pygame.font.SysFont(None, int(fontSize))
-                trade_with_others_hover_font = pygame.font.SysFont(None, int(fontSize*1.1))
-                
-                trade_with_others_btn = Button("TRADE WITH PLAYERS", WIDTH//1.5,icon_road.pos[1]-15, 230, label_h, ["ReadyToRoll", "PlayerTurn"], trade_with_others_font, trade_with_others_hover_font)
-                for trade in player_trades[player-1]:
-                    resource = trade[0]
-                    color = (0,0,120)
-                    trade_possible = True
-                    if resource == "general":
-                        resources_needed = max(player_resources[player-1].values())
-                    else:
-                        resources_needed = player_resources[player-1][str(resource)]
-                    if  resources_needed >= len(trade):
-                        color = BTN_COLOR
-                        trade_possible = True
-                    else:
-                        color = UNVBLE_BTN_COLOR
-                        trade_possible = False
-                    available_trades.append(TradeLabel(trade, WIDTH //1.5, icon_road.pos[1]-15+(i+1)*(label_h*1.15),["ReadyToRoll", "PlayerTurn"], 230, label_h, color, trade_possible=trade_possible))
-                    i+=1
+                trade_with_others_btn, available_trades = tradeMenuGen(player_trades, player_resources, player, trade_costs_display_order)
             
 
                 print(player_trades[player-1])      
@@ -349,9 +320,24 @@ while running:
                     if trade_menu == "Ports":
                         trade_menu = "SelectPlayer"
                         trade_with_others_btn.label = "TRADE WITH PORTS"
+                        trade_with_others_btn.move_to(trade_with_others_btn.pos[0], trade_with_others_btn.pos[1], 230, 80)
                     elif trade_menu == "SelectPlayer":
                         trade_menu = "Ports"
                         trade_with_others_btn.label = "TRADE WITH PLAYERS"
+                    elif trade_menu == "PlayerTrade":
+                        trade_menu = "SelectPlayer"
+                        trade_with_others_btn.label = "TRADE WITH PORTS"
+                if trade_menu == "Ports":
+                    pass
+                elif trade_menu == "SelectPlayer":
+                    for i in range(len(trade_with_player_btns)):
+                        if trade_with_player_btns[i].is_clicked(mouse_pos):
+                            trade_menu = "PlayerTrade"
+                            trade_with_others_btn.label = "SELECT OTHER PLAYER"
+                            trade_partner = i+1
+                            confirm_trade_btn, ap_gets_btn, tp_gets_btn, tp_card_area_rect, tp_fg_rect = tradeWithPlayer(player, trade_partner, player_resources)
+                elif trade_menu == "PlayerTrade":
+                    pass
 
                                 
             
@@ -362,6 +348,7 @@ while running:
                     isPlacingTown = False
                     new_town.adjacent, new_town.port = findAdjacent(new_town, tile_centres, number_on_tile, r, ports)
                     player_towns[player-1].append(new_town)
+                    building_lockon = (0,0)
                     if new_town.port != None and new_town.port.trade not in player_trades[player-1]:
                         player_trades[player-1].append(new_town.port.trade)
 
@@ -379,19 +366,21 @@ while running:
                     new_road.placed = True
                     isPlacingRoad = False
                     player_roads[player-1].append(new_road)
+                    building_lockon = (0,0)
                     #Payment
                     if cur_game_state == "PlayerTurn":
                         player_resources[player-1]["brick"]-=1
                         player_resources[player-1]["timber"]-=1
 
                     placed_first_town_road[player-1]+=1
+                    
 
             elif isPlacingCity and building_lockon != (0,0):
                 if canPlaceCheck(new_town, screen, player_towns, player_roads, r, "city", player, cur_game_state, placed_first_town_road):
                     new_town.pos = building_lockon
                     new_town.placed = True
                     isPlacingCity = False
-
+                    building_lockon = (0,0)
                     if PiecePlacement.town_being_upgraded is not None:
                         PiecePlacement.town_being_upgraded.level = 2
                     #Payment
@@ -529,10 +518,17 @@ while running:
                         trade_with_player_btns[i].move_to(WIDTH//1.32, HEIGHT//2.5+j*(twp_btn_h*1.1))
                         trade_with_player_btns[i].wrap = True
                         trade_with_player_btns[i].wrap_width = 150
-                        trade_with_player_btns[i].center_offset = 160
+                        trade_with_player_btns[i].center_offset[0] = -160
                         trade_with_player_btns[i].draw(mouse_pos, cur_game_state)
-                        drawCards(player_resources, i, card_types, mouse_pos, 30,60, WIDTH//1.32-70,  HEIGHT//2.5+j*(twp_btn_h*1.1-20))
+                        drawCards(player_resources, i, card_types, mouse_pos, 30,60, WIDTH//1.32-70,  HEIGHT//2.5-20+j*(twp_btn_h*1.1))
                         j+=1
+            elif trade_menu == "PlayerTrade":
+                confirm_trade_btn.draw(mouse_pos, cur_game_state)
+                ap_gets_btn.draw(mouse_pos, cur_game_state)
+                tp_gets_btn.draw(mouse_pos, cur_game_state)
+                pygame.draw.rect(screen, (102, 62, 17), tp_card_area_rect)
+                pygame.draw.rect(screen, (186, 118, 41), tp_fg_rect)
+                drawCards(player_resources, trade_partner-1, card_types, mouse_pos, 35, 70, WIDTH//1.55, HEIGHT//1.45)
 
             
                 

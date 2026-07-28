@@ -47,7 +47,7 @@ clock       = pygame.time.Clock()
 
 
 class Button:
-    def __init__(self, label, cx, cy, w, h, visible_in_game_state=list, btn_font=None, hover_font=hover_font, color=BTN_COLOR, hover_color=BTN_HOVER, center_offset = 0, wrap = False, wrap_width = None):
+    def __init__(self, label, cx, cy, w, h, visible_in_game_state=list, btn_font=None, hover_font=hover_font, color=BTN_COLOR, hover_color=BTN_HOVER, center_offset = None, wrap = False, wrap_width = None):
         self.label       = label
         self.pos         = (cx, cy)
         self.w, self.h   = w, h
@@ -59,30 +59,43 @@ class Button:
         self.hover_color = hover_color
         self.visible_in_game_state = visible_in_game_state
         self.clickable = False
-        self.center_offset = center_offset
+        self.center_offset = center_offset if center_offset is not None else [0, 0]
         self.wrap = wrap
         self.wrap_width = wrap_width
+        self.can_hover = True
+        self.border = False
+        self.border_color = (99, 47, 3)
 
-    def move_to(self, cx, cy):
+    def move_to(self, cx, cy, w=None, h=None):
         self.pos        = (cx, cy)
+        if w == None and h == None:
+            w, h = self.w, self.h
+        self.w, self.h = w, h
         self.rect        = pygame.Rect(int(cx - self.w // 2), int(cy - self.h // 2), int(self.w), int(self.h))
         self.hover_rect  = self.rect.inflate(7,7)
 
     def draw(self, mouse_pos, gamestate):
         if str(gamestate) in self.visible_in_game_state:
             self.clickable = True
-            if self.rect.collidepoint(mouse_pos):
-                rect = self.hover_rect
+
+
+            if self.rect.collidepoint(mouse_pos) and self.can_hover:
                 c = self.hover_color
+                rect = self.hover_rect
+                bg_rect = self.rect.inflate(20,20)
                 btn_font_final = self.hover_font 
             else:
                 c = self.color
                 rect = self.rect
+                bg_rect = self.rect.inflate(10,10)
                 btn_font_final = self.font
-
+            if self.border == True:
+                pygame.draw.rect(screen, self.border_color, bg_rect, border_radius = 8)
             pygame.draw.rect(screen, c, rect, border_radius=8)
 
-            label_center = (self.rect.centerx - self.center_offset, self.rect.centery)
+            
+
+            label_center = (self.rect.centerx + self.center_offset[0], self.rect.centery + self.center_offset[1])
             if self.wrap:
                 max_width = self.wrap_width if self.wrap_width is not None else self.w
                 lines = self.wrap_label(self.label, btn_font_final, max_width)
@@ -322,6 +335,10 @@ class PriceLabel:
         else:
             self.clickable = False
 
+    def is_clicked(self, mouse_pos):
+            if self.clickable:
+                return self.rect.collidepoint(mouse_pos)
+
 class TradeLabel(PriceLabel):
     def __init__(self, price, x, y, visible_in_game_state, w=230, h=80, color=BTN_COLOR, hover_color=BTN_HOVER, trade_possible=True):
         super().__init__(price, x, y, visible_in_game_state, w, h, color, hover_color)
@@ -357,3 +374,56 @@ class TradeLabel(PriceLabel):
                 card.draw(hover)
         else:
             self.clickable = False
+
+def tradeMenuGen(player_trades, player_resources, player, trade_costs_display_order, ):
+    available_trades = []                
+    player_trades[player-1] = sorted(player_trades[player-1], key=trade_costs_display_order.index) #Sorts available trades in menu
+    trades_len = len(player_trades[player-1])
+    if trades_len < 5:
+        label_h = 80
+        fontSize = 25
+    else:
+        label_h  = 80 //(1+(trades_len-4)/5.5) #Scales down label_h when trades exceed 5, to fit on screen
+        fontSize = 25//(1+(trades_len-4)/20)
+    
+    trade_with_others_font = pygame.font.SysFont(None, int(fontSize))
+    trade_with_others_hover_font = pygame.font.SysFont(None, int(fontSize*1.1))
+    
+    trade_with_others_btn = Button("TRADE WITH PLAYERS", WIDTH//1.5, HEIGHT//4.3, 230, label_h, ["PlayerTurn"], trade_with_others_font, trade_with_others_hover_font)
+    i=0
+    for trade in player_trades[player-1]:
+        resource = trade[0]
+        color = (0,0,120)
+        trade_possible = True
+        if resource == "general":
+            resources_needed = max(player_resources[player-1].values())
+        else:
+            resources_needed = player_resources[player-1][str(resource)]
+        if  resources_needed >= len(trade):
+            color = BTN_COLOR
+            trade_possible = True
+        else:
+            color = UNVBLE_BTN_COLOR
+            trade_possible = False
+        available_trades.append(TradeLabel(trade, WIDTH //1.5, HEIGHT//4.3+(i+1)*(label_h*1.15),["ReadyToRoll", "PlayerTurn"], 230, label_h, color, trade_possible=trade_possible))
+        i+=1
+    return trade_with_others_btn, available_trades
+
+def tradeWithPlayer(active_player, trade_partner, player_resources):
+    trade_with_others_font = pygame.font.SysFont(None, int(25))
+    trade_with_others_hover_font = pygame.font.SysFont(None, int(25*1.1))
+    confirm_trade_btn = Button("CONFIRM", WIDTH//1.5+230*1.1, HEIGHT//4.3, 230, 80, ["PlayerTurn"], trade_with_others_font, trade_with_others_hover_font)
+    ap_gets_btn = Button(f"Player {active_player} GETS:", WIDTH//1.5, HEIGHT//2.1, 230, 260, ["PlayerTurn"],trade_with_others_font, trade_with_others_hover_font)
+    tp_gets_btn = Button(f"Player {trade_partner} GETS:", WIDTH//1.5+230*1.1, HEIGHT//2.1, 230, 260, ["PlayerTurn"],trade_with_others_font, trade_with_others_hover_font)
+    ap_gets_btn.can_hover = False
+    tp_gets_btn.can_hover = False
+    ap_gets_btn.border = True
+    tp_gets_btn.border = True
+    ap_gets_btn.center_offset[1] = -100
+    tp_gets_btn.center_offset[1] = -100
+
+    tp_card_area_rect = pygame.Rect(WIDTH//1.505-230//2, HEIGHT//1.45, 500, 85)
+    tp_fg_rect = pygame.Rect(WIDTH//1.505-230//2+10, HEIGHT//1.45, 480, 75)
+    
+
+    return confirm_trade_btn, ap_gets_btn, tp_gets_btn, tp_card_area_rect, tp_fg_rect
