@@ -59,6 +59,8 @@ def firstRound(num_players):
         player_resources.append({"ore":0, "sheep":0, "brick":0, "wheat":0, "timber":0})
         player_trades.append([trade_costs[6]])
 
+    
+
     return player_towns, player_roads, placed_first_town_road, player_resources, player_trades
 """
 

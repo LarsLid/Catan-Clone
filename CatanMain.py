@@ -3,6 +3,7 @@ import sys
 import math
 import numpy as np
 import random as rd
+import copy
 pygame.init()
 import UI
 from UI import *
@@ -86,7 +87,7 @@ def findLockon (build_spaces, mouse_pos, screen):
     return building_lockon
 
 def debugStart (start_with_resources=True, all_trades_available=False):
-    global cur_game_state, cur_dice_state, player_action_ui, player_towns, player_resources, town_spaces_main, tile_centres, number_on_tile, r, test
+    global cur_game_state, cur_dice_state, player_action_ui, player_towns, player_resources, town_spaces_main, tile_centres, number_on_tile, r, test, player_resources_displayed
     cur_game_state = "ReadyToRoll"
     cur_dice_state = "Ready"
     player_action_ui = "Build"
@@ -142,7 +143,9 @@ def debugStart (start_with_resources=True, all_trades_available=False):
                         ["brick", "brick"],
                         ["wheat", "wheat"],
                         ["timber", "timber"],
-]
+        ]
+    player_resources_displayed = copy.deepcopy(player_resources)
+            
     
                 
 
@@ -212,6 +215,8 @@ isPlacingCity = False
 player_action_ui = "Build"
 trade_menu = "Ports"
 
+draggable_card_valid = None
+
 running = True
 
 
@@ -229,6 +234,7 @@ while running:
                 cur_game_state = "Menu"
                 trade_menu = "Ports"
                 player_towns, player_roads, placed_first_town_road, player_resources, player_trades = firstRound(2)
+                player_resources_displayed = copy.deepcopy(player_resources)
             if event.key == pygame.K_t: #Purely debug to add available trades
                 player_trades[player-1].append(["sheep", "sheep"])
 
@@ -244,6 +250,7 @@ while running:
                 placeTownInfo = InfoText(None,cx//0.7, cy//3.5, 580, 40, player, ["FirstRound"])
                 player_action_ui = "Build"
                 trade_menu = "Ports"
+                player_resources_displayed = copy.deepcopy(player_resources)
 
             elif gen_btn.is_clicked(mouse_pos):
                 mapGen(mapseed, number_on_tile, CENTER_DESERT)
@@ -259,6 +266,7 @@ while running:
                     if btn.is_clicked(mouse_pos):
                         playerCount = idx+2
                         player_towns, player_roads, placed_first_town_road, player_resources, player_trades = firstRound(playerCount)
+                        player_resources_displayed = copy.deepcopy(player_resources)
                         player = 1
                         print(f"PLAYER {player}'S TURN")
                         cur_game_state = "FirstRound"
@@ -279,6 +287,7 @@ while running:
             elif build_btn.is_clicked(mouse_pos) and cur_game_state == "PlayerTurn":
                 player_action_ui = "Build"
                 trade_menu="Ports"
+                player_resources_displayed = copy.deepcopy(player_resources)
             elif trade_btn.is_clicked(mouse_pos) and cur_game_state == "PlayerTurn":
                 player_action_ui = "Trade"
                 trade_with_others_btn, available_trades = tradeMenuGen(player_trades, player_resources, player, trade_costs_display_order)
@@ -327,17 +336,22 @@ while running:
                     elif trade_menu == "PlayerTrade":
                         trade_menu = "SelectPlayer"
                         trade_with_others_btn.label = "TRADE WITH PORTS"
+                        player_resources_displayed = copy.deepcopy(player_resources)
                 if trade_menu == "Ports":
                     pass
                 elif trade_menu == "SelectPlayer":
                     for i in range(len(trade_with_player_btns)):
-                        if trade_with_player_btns[i].is_clicked(mouse_pos):
+                        if i+1 != player and trade_with_player_btns[i].is_clicked(mouse_pos):
                             trade_menu = "PlayerTrade"
                             trade_with_others_btn.label = "SELECT OTHER PLAYER"
                             trade_partner = i+1
-                            confirm_trade_btn, ap_gets_btn, tp_gets_btn, tp_card_area_rect, tp_fg_rect = tradeWithPlayer(player, trade_partner, player_resources)
+                            confirm_trade_btn, ap_gets_btn, tp_gets_btn, tp_card_area_rect, tp_fg_rect, ap_gets_lockon, tp_gets_lockon = tradeWithPlayer(player, trade_partner, player_resources)
+                            break
                 elif trade_menu == "PlayerTrade":
-                    pass
+                    if draggable_card_valid is not None:
+                        if ap_gets_lockon.collidepoint(mouse_pos):
+                            print(f"player{player} gets 1 {resource_types[card_types.index(draggable_card_valid.img)]}")
+                            draggable_card_valid = None
 
                                 
             
@@ -358,6 +372,7 @@ while running:
                         player_resources[player-1]["brick"]-=1
                         player_resources[player-1]["wheat"]-=1
                         player_resources[player-1]["timber"]-=1
+                        player_resources_displayed = copy.deepcopy(player_resources)
 
                     placed_first_town_road[player-1]+=1
             elif isPlacingRoad and building_lockon != (0,0):
@@ -371,6 +386,7 @@ while running:
                     if cur_game_state == "PlayerTurn":
                         player_resources[player-1]["brick"]-=1
                         player_resources[player-1]["timber"]-=1
+                        player_resources_displayed = copy.deepcopy(player_resources)
 
                     placed_first_town_road[player-1]+=1
                     
@@ -387,6 +403,7 @@ while running:
                     if cur_game_state == "PlayerTurn":
                         player_resources[player-1]["wheat"]-=2
                         player_resources[player-1]["ore"]-=3
+                        player_resources_displayed = copy.deepcopy(player_resources)
 
             
     screen.fill(BG_COLOR)
@@ -490,7 +507,7 @@ while running:
         pygame.draw.rect(screen, (102, 62, 17), card_area_rect)
         pygame.draw.rect(screen, (186, 118, 41), fg_rect)
 
-        drawCards(player_resources, player-1, card_types, mouse_pos, 45, 90, 100, HEIGHT//1.2)
+        draggable_card = drawCards(player-1, card_types, mouse_pos, 45, 90, 100, HEIGHT//1.2, player_resources_displayed, trade_menu)
 
         """
         testCard = Card(card_types[1], 0, 400, 100)
@@ -520,7 +537,7 @@ while running:
                         trade_with_player_btns[i].wrap_width = 150
                         trade_with_player_btns[i].center_offset[0] = -160
                         trade_with_player_btns[i].draw(mouse_pos, cur_game_state)
-                        drawCards(player_resources, i, card_types, mouse_pos, 30,60, WIDTH//1.32-70,  HEIGHT//2.5-20+j*(twp_btn_h*1.1))
+                        draggable_card = drawCards(i, card_types, mouse_pos, 30,60, WIDTH//1.32-70,  HEIGHT//2.5-20+j*(twp_btn_h*1.1), player_resources_displayed, trade_menu)
                         j+=1
             elif trade_menu == "PlayerTrade":
                 confirm_trade_btn.draw(mouse_pos, cur_game_state)
@@ -528,8 +545,20 @@ while running:
                 tp_gets_btn.draw(mouse_pos, cur_game_state)
                 pygame.draw.rect(screen, (102, 62, 17), tp_card_area_rect)
                 pygame.draw.rect(screen, (186, 118, 41), tp_fg_rect)
-                drawCards(player_resources, trade_partner-1, card_types, mouse_pos, 35, 70, WIDTH//1.55, HEIGHT//1.45)
 
+                pygame.draw.rect(screen, (0,250,0), ap_gets_lockon)
+                pygame.draw.rect(screen, (0,250,0), tp_gets_lockon)
+
+                draggable_card = drawCards(trade_partner-1, card_types, mouse_pos, 35, 70, WIDTH//1.55, HEIGHT//1.45, player_resources_displayed, trade_menu)
+                if draggable_card is not None:
+                    draggable_card_valid = draggable_card
+                try:
+                    if draggable_card_valid is not None:
+                        draggable_card_valid.move_to(mouse_pos[0], mouse_pos[1])
+                        draggable_card_valid.draw(True)
+                        print("not none now")
+                except:
+                    pass
             
                 
 
