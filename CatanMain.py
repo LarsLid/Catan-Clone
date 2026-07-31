@@ -267,7 +267,7 @@ while running:
                 for idx, btn in enumerate(player_btns):
                     if btn.is_clicked(mouse_pos):
                         playerCount = idx+2
-                        player_towns, player_roads, placed_first_town_road, player_resources, player_trades = firstRound(playerCount)
+                        player_towns, player_roads, placed_first_town_road, player_resources, player_trades, player_gets_cards = firstRound(playerCount)
                         player_resources_displayed = copy.deepcopy(player_resources)
                         player = 1
                         print(f"PLAYER {player}'S TURN")
@@ -347,17 +347,18 @@ while running:
                             trade_menu = "PlayerTrade"
                             trade_with_others_btn.label = "SELECT OTHER PLAYER"
                             trade_partner = i+1
-                            confirm_trade_btn, ap_gets_btn, tp_gets_btn, tp_card_area_rect, tp_fg_rect, ap_gets_lockon, tp_gets_lockon, ap_gets_cards, tp_gets_cards = tradeWithPlayer(player, trade_partner, player_resources)
+                            confirm_trade_btn, ap_gets_btn, tp_gets_btn, tp_card_area_rect, tp_fg_rect, ap_gets_lockon, tp_gets_lockon = tradeWithPlayer(player, trade_partner, player_resources)
+                            player_gets_cards = [{key: 0 for key in d} for d in player_gets_cards]
                             break
                 elif trade_menu == "PlayerTrade":
                     if draggable_card_valid is not None:
                         if ap_gets_lockon.collidepoint(mouse_pos) and draggable_card_valid.player == trade_partner-1:
                             print(f"player{player} gets 1 {resource_types[card_types.index(draggable_card_valid.img)]}")
-                            ap_gets_cards[trade_partner-1][resource_types[card_types.index(draggable_card_valid.img)]] +=1
+                            player_gets_cards[trade_partner-1][resource_types[card_types.index(draggable_card_valid.img)]] +=1
                             draggable_card_valid = None
-                            print(ap_gets_cards[trade_partner-1])
+                            print(player_gets_cards[trade_partner-1])
                         elif tp_gets_lockon.collidepoint(mouse_pos) and draggable_card_valid.player == player-1:
-                            tp_gets_cards[player-1][resource_types[card_types.index(draggable_card_valid.img)]] +=1
+                            player_gets_cards[player-1][resource_types[card_types.index(draggable_card_valid.img)]] +=1
                             draggable_card_valid = None
                         elif card_area_rect.collidepoint(mouse_pos) and draggable_card_valid.player == player-1:
                             player_resources_displayed[player-1][resource_types[card_types.index(draggable_card_valid.img)]] +=1
@@ -368,8 +369,20 @@ while running:
                         #player_resources_displayed = copy.deepcopy(player_resources)
                     
                     if confirm_trade_btn.is_clicked(mouse_pos):
-                        #for i in range(len(ap_gets_cards)):
-                        pass
+                        player_resources = copy.deepcopy(player_resources_displayed)
+                        for resource, amount in player_gets_cards[trade_partner-1].items():
+                            if resource in player_resources[player-1]:
+                                player_resources[player-1][resource] += amount
+                        for resource, amount in player_gets_cards[player-1].items():
+                            if resource in player_resources[trade_partner-1]:
+                                player_resources[trade_partner-1][resource] += amount
+                        player_resources_displayed = copy.deepcopy(player_resources)
+                        player_gets_cards = [{key: 0 for key in d} for d in player_gets_cards]
+
+                        trade_menu = "Ports"
+                        trade_with_others_btn.label = "TRADE WITH PLAYERS"
+
+                        
 
 
 
@@ -572,14 +585,14 @@ while running:
                 pygame.draw.rect(screen, (102, 62, 17), tp_card_area_rect)
                 pygame.draw.rect(screen, (186, 118, 41), tp_fg_rect)
 
-                pygame.draw.rect(screen, (0,250,0), ap_gets_lockon)
-                pygame.draw.rect(screen, (0,250,0), tp_gets_lockon)
+                #pygame.draw.rect(screen, (0,250,0), ap_gets_lockon)
+                #pygame.draw.rect(screen, (0,250,0), tp_gets_lockon)
 
-                draggable_card = drawCards(trade_partner-1, card_types, mouse_pos, 35, 70, WIDTH//1.65, HEIGHT//2.7, ap_gets_cards, trade_menu, draggable_card_valid, mouse_clicked, True, 200)
+                draggable_card = drawCards(trade_partner-1, card_types, mouse_pos, 35, 70, WIDTH//1.65, HEIGHT//2.65, player_gets_cards, trade_menu, draggable_card_valid, mouse_clicked, True, 200)
                 if draggable_card is not None:
                     draggable_card_valid = draggable_card
 
-                draggable_card = drawCards(player-1, card_types, mouse_pos, 35, 70, WIDTH//1.65+250, HEIGHT//2.7, tp_gets_cards, trade_menu, draggable_card_valid, mouse_clicked, True, 200)
+                draggable_card = drawCards(player-1, card_types, mouse_pos, 35, 70, WIDTH//1.65+250, HEIGHT//2.65, player_gets_cards, trade_menu, draggable_card_valid, mouse_clicked, True, 200)
                 if draggable_card is not None:
                     draggable_card_valid = draggable_card
 

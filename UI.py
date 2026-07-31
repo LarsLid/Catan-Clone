@@ -466,9 +466,5 @@ def tradeWithPlayer(active_player, trade_partner, player_resources):
 
     ap_gets_lockon = pygame.Rect(WIDTH//1.5-200//2, HEIGHT//2-250//2, 200, 200)
     tp_gets_lockon = pygame.Rect(WIDTH//1.5+230*1.1-200//2, HEIGHT//2-250//2, 200, 200)
-
-    ap_gets_cards = [{"ore":0, "sheep":0, "brick":0, "wheat":0, "timber":0} for i in range(4)]
-    tp_gets_cards = [{"ore":0, "sheep":0, "brick":0, "wheat":0, "timber":0} for i in range(4)] #List of dicts to match player_resources for drawCards()
-        
-
-    return confirm_trade_btn, ap_gets_btn, tp_gets_btn, tp_card_area_rect, tp_fg_rect, ap_gets_lockon, tp_gets_lockon, ap_gets_cards, tp_gets_cards
+    
+    return confirm_trade_btn, ap_gets_btn, tp_gets_btn, tp_card_area_rect, tp_fg_rect, ap_gets_lockon, tp_gets_lockon

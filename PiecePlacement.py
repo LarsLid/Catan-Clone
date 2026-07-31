@@ -51,17 +51,19 @@ def firstRound(num_players):
     placed_first_town_road = []
     player_resources = []
     player_trades = []
+    player_gets_cards = []
 
     for i in range(num_players):
         player_towns.append([])
         player_roads.append([])
         placed_first_town_road.append(0)
         player_resources.append({"ore":0, "sheep":0, "brick":0, "wheat":0, "timber":0})
+        player_gets_cards.append({"ore":0, "sheep":0, "brick":0, "wheat":0, "timber":0}) #Trade inventory for player trades
         player_trades.append([trade_costs[6]])
 
     
 
-    return player_towns, player_roads, placed_first_town_road, player_resources, player_trades
+    return player_towns, player_roads, placed_first_town_road, player_resources, player_trades, player_gets_cards
 """
 
 
