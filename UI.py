@@ -273,14 +273,23 @@ class Card:
 
         
 
-def drawCards(player, card_types, mouse_pos, card_w, card_h, x, y, player_resources_displayed, trade_menu):
+def drawCards(player, card_types, mouse_pos, card_w, card_h, x, y, player_resources_displayed, trade_menu, draggable_card_valid, mouse_clicked, wrap=False, wrap_width =0):
     n=0
+    x_start = x
     spacing= card_w*2
     displace = card_w//3.75
     resource_indexes = ["ore", "sheep", "brick", "wheat", "timber"]
-    draggable_card = None
+    
+    result_draggable_card = None
     for resource, amount in player_resources_displayed[player].items():
+        draggable_card = None
+        drag_resource = None
+        drag_amount = 0
         card_type_index = resource_indexes.index(resource)
+        if wrap:
+                    if x-x_start > wrap_width:
+                        x = x_start
+                        y += card_h*1.4
         if amount>0:
             offset = []
             amountShown = 0
@@ -291,21 +300,24 @@ def drawCards(player, card_types, mouse_pos, card_w, card_h, x, y, player_resour
                 offset.append((i*displace, i*displace))
             pile_hover = []
             pile = []
+            
 
+        
             for i in range(amountShown-1, -1, -1):
-                card = Card(card_types[card_type_index], player, x+n*spacing+offset[i][0], y//0.93-offset[i][0], card_w, card_h)
+                card = Card(card_types[card_type_index], player, x+offset[i][0], y//0.93-offset[i][0], card_w, card_h)
                 if card.rect.collidepoint(mouse_pos):
                     hover = True
-                    if trade_menu == "PlayerTrade":
-                        for event in pygame.event.get(): #Litt sketchy med event handler her men collison detection håndteres her...
-                            if event.type == pygame.MOUSEBUTTONDOWN:
-                                draggable_card = Card(card_types[card_type_index], player, mouse_pos[0], mouse_pos[1], card_w, card_h)
-                                amount -=1
-                                player_resources_displayed[player][resource] = amount
+                    if trade_menu == "PlayerTrade" and draggable_card_valid == None:
+                        if mouse_clicked:
+                            draggable_card = Card(card_types[card_type_index], player, mouse_pos[0], mouse_pos[1], card_w, card_h)
+                            drag_amount = amount
+                            drag_resource = str(resource)
+                            
                 else:
                     hover = False
                 pile_hover.append(hover)
                 pile.append(card)
+            
             #Significant hover index
             last_true_idx = next((i for i in range(len(pile_hover) - 1, -1, -1) if pile_hover[i]), None)
             for card in pile:
@@ -313,10 +325,15 @@ def drawCards(player, card_types, mouse_pos, card_w, card_h, x, y, player_resour
                     card.draw(True)
                 else:
                     card.draw(False)
-            amount_label = Button(str(amount),x+n*spacing, y+40, card_w*0.9, card_w*0.9, ["ReadyToRoll", "PlayerTurn"])
+            amount_label = Button(str(amount),x, y+40, card_w*0.9, card_w*0.9, ["ReadyToRoll", "PlayerTurn"])
             amount_label.draw(mouse_pos, "PlayerTurn")
-            n+=1
-    return draggable_card
+            x += spacing
+        if draggable_card is not None:
+            drag_amount -=1
+            player_resources_displayed[player][drag_resource] = drag_amount
+            result_draggable_card = draggable_card
+    
+    return result_draggable_card
 
 class PriceLabel:
     def __init__(self, price, x, y,visible_in_game_state, w=230, h=80, color=BTN_COLOR, hover_color=BTN_HOVER,):
@@ -447,8 +464,11 @@ def tradeWithPlayer(active_player, trade_partner, player_resources):
     tp_card_area_rect = pygame.Rect(WIDTH//1.505-230//2, HEIGHT//1.45, 500, 85)
     tp_fg_rect = pygame.Rect(WIDTH//1.505-230//2+10, HEIGHT//1.45, 480, 75)
 
-    ap_gets_lockon = pygame.Rect(WIDTH//1.5-200//2, HEIGHT//2-250//2, 200, 150)
-    tp_gets_lockon = pygame.Rect(WIDTH//1.5+230*1.1-200//2, HEIGHT//2-250//2, 200, 150)
+    ap_gets_lockon = pygame.Rect(WIDTH//1.5-200//2, HEIGHT//2-250//2, 200, 200)
+    tp_gets_lockon = pygame.Rect(WIDTH//1.5+230*1.1-200//2, HEIGHT//2-250//2, 200, 200)
+
+    ap_gets_cards = [{"ore":0, "sheep":0, "brick":0, "wheat":0, "timber":0} for i in range(4)]
+    tp_gets_cards = [{"ore":0, "sheep":0, "brick":0, "wheat":0, "timber":0} for i in range(4)] #List of dicts to match player_resources for drawCards()
         
 
-    return confirm_trade_btn, ap_gets_btn, tp_gets_btn, tp_card_area_rect, tp_fg_rect, ap_gets_lockon, tp_gets_lockon
+    return confirm_trade_btn, ap_gets_btn, tp_gets_btn, tp_card_area_rect, tp_fg_rect, ap_gets_lockon, tp_gets_lockon, ap_gets_cards, tp_gets_cards

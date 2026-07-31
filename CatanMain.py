@@ -222,6 +222,7 @@ running = True
 
 while running:
     mouse_pos = pygame.mouse.get_pos()
+    mouse_clicked = False
 
 
     for event in pygame.event.get():
@@ -244,6 +245,7 @@ while running:
             screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
             UI.screen = screen
         if event.type == pygame.MOUSEBUTTONDOWN: # MOUSECLICK EVENTS BELOW
+            mouse_clicked = True
 
             if endturn_btn.is_clicked(mouse_pos):
                 player, cur_game_state, cur_dice_state, placed_first_town_road, snakedraft = endTurn(player, playerCount, cur_game_state, placed_first_town_road, snakedraft)
@@ -345,13 +347,33 @@ while running:
                             trade_menu = "PlayerTrade"
                             trade_with_others_btn.label = "SELECT OTHER PLAYER"
                             trade_partner = i+1
-                            confirm_trade_btn, ap_gets_btn, tp_gets_btn, tp_card_area_rect, tp_fg_rect, ap_gets_lockon, tp_gets_lockon = tradeWithPlayer(player, trade_partner, player_resources)
+                            confirm_trade_btn, ap_gets_btn, tp_gets_btn, tp_card_area_rect, tp_fg_rect, ap_gets_lockon, tp_gets_lockon, ap_gets_cards, tp_gets_cards = tradeWithPlayer(player, trade_partner, player_resources)
                             break
                 elif trade_menu == "PlayerTrade":
                     if draggable_card_valid is not None:
-                        if ap_gets_lockon.collidepoint(mouse_pos):
+                        if ap_gets_lockon.collidepoint(mouse_pos) and draggable_card_valid.player == trade_partner-1:
                             print(f"player{player} gets 1 {resource_types[card_types.index(draggable_card_valid.img)]}")
+                            ap_gets_cards[trade_partner-1][resource_types[card_types.index(draggable_card_valid.img)]] +=1
                             draggable_card_valid = None
+                            print(ap_gets_cards[trade_partner-1])
+                        elif tp_gets_lockon.collidepoint(mouse_pos) and draggable_card_valid.player == player-1:
+                            tp_gets_cards[player-1][resource_types[card_types.index(draggable_card_valid.img)]] +=1
+                            draggable_card_valid = None
+                        elif card_area_rect.collidepoint(mouse_pos) and draggable_card_valid.player == player-1:
+                            player_resources_displayed[player-1][resource_types[card_types.index(draggable_card_valid.img)]] +=1
+                            draggable_card_valid = None
+                        elif tp_card_area_rect.collidepoint(mouse_pos) and draggable_card_valid.player == trade_partner-1:
+                            player_resources_displayed[trade_partner-1][resource_types[card_types.index(draggable_card_valid.img)]] +=1
+                            draggable_card_valid = None
+                        #player_resources_displayed = copy.deepcopy(player_resources)
+                    
+                    if confirm_trade_btn.is_clicked(mouse_pos):
+                        #for i in range(len(ap_gets_cards)):
+                        pass
+
+
+
+
 
                                 
             
@@ -507,7 +529,9 @@ while running:
         pygame.draw.rect(screen, (102, 62, 17), card_area_rect)
         pygame.draw.rect(screen, (186, 118, 41), fg_rect)
 
-        draggable_card = drawCards(player-1, card_types, mouse_pos, 45, 90, 100, HEIGHT//1.2, player_resources_displayed, trade_menu)
+        draggable_card = drawCards(player-1, card_types, mouse_pos, 45, 90, 100, HEIGHT//1.2, player_resources_displayed, trade_menu, draggable_card_valid, mouse_clicked)
+        if draggable_card is not None:
+            draggable_card_valid = draggable_card
 
         """
         testCard = Card(card_types[1], 0, 400, 100)
@@ -537,7 +561,9 @@ while running:
                         trade_with_player_btns[i].wrap_width = 150
                         trade_with_player_btns[i].center_offset[0] = -160
                         trade_with_player_btns[i].draw(mouse_pos, cur_game_state)
-                        draggable_card = drawCards(i, card_types, mouse_pos, 30,60, WIDTH//1.32-70,  HEIGHT//2.5-20+j*(twp_btn_h*1.1), player_resources_displayed, trade_menu)
+                        draggable_card = drawCards(i, card_types, mouse_pos, 30,60, WIDTH//1.32-70,  HEIGHT//2.5-20+j*(twp_btn_h*1.1), player_resources_displayed, trade_menu, draggable_card_valid, mouse_clicked)
+                        if draggable_card is not None:
+                            draggable_card_valid = draggable_card
                         j+=1
             elif trade_menu == "PlayerTrade":
                 confirm_trade_btn.draw(mouse_pos, cur_game_state)
@@ -549,16 +575,23 @@ while running:
                 pygame.draw.rect(screen, (0,250,0), ap_gets_lockon)
                 pygame.draw.rect(screen, (0,250,0), tp_gets_lockon)
 
-                draggable_card = drawCards(trade_partner-1, card_types, mouse_pos, 35, 70, WIDTH//1.55, HEIGHT//1.45, player_resources_displayed, trade_menu)
+                draggable_card = drawCards(trade_partner-1, card_types, mouse_pos, 35, 70, WIDTH//1.65, HEIGHT//2.7, ap_gets_cards, trade_menu, draggable_card_valid, mouse_clicked, True, 200)
                 if draggable_card is not None:
                     draggable_card_valid = draggable_card
-                try:
-                    if draggable_card_valid is not None:
-                        draggable_card_valid.move_to(mouse_pos[0], mouse_pos[1])
-                        draggable_card_valid.draw(True)
-                        print("not none now")
-                except:
-                    pass
+
+                draggable_card = drawCards(player-1, card_types, mouse_pos, 35, 70, WIDTH//1.65+250, HEIGHT//2.7, tp_gets_cards, trade_menu, draggable_card_valid, mouse_clicked, True, 200)
+                if draggable_card is not None:
+                    draggable_card_valid = draggable_card
+
+                draggable_card = drawCards(trade_partner-1, card_types, mouse_pos, 35, 70, WIDTH//1.55, HEIGHT//1.45, player_resources_displayed, trade_menu, draggable_card_valid, mouse_clicked)
+                if draggable_card is not None:
+                    draggable_card_valid = draggable_card
+                if draggable_card_valid is not None:
+                    draggable_card_valid.move_to(mouse_pos[0], mouse_pos[1])
+                    draggable_card_valid.draw(True)
+                    print("not none now")
+
+
             
                 
 
